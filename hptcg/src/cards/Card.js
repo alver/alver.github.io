@@ -26,6 +26,8 @@ export class SpellCard extends Card {
         this.effect = data.effect;
         this.damage = data.damage;
         this.healing = data.healing;
+        // Default spell image if none provided
+        this.imageUrl = data.imageUrl || 'assets/cards/spells/default_spell.jpg';
     }
 }
 

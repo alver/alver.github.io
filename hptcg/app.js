@@ -39,7 +39,7 @@ import { GameManager } from './src/game/GameManager.js';
 
     // Position play area
     deckManager.playAreaContainer.x = 200;
-    deckManager.playAreaContainer.y = isBot ? areaHeight + 20 : -220;
+    deckManager.playAreaContainer.y = isBot ? areaHeight : -200;
 
     // Hand Area background
     const handArea = new Graphics()
@@ -49,13 +49,13 @@ import { GameManager } from './src/game/GameManager.js';
     handArea.x = 200;
     handArea.y = (areaHeight - 160) / 2;
 
-    // Playing Area background
+    // Playing Area (middle of screen)
     const playArea = new Graphics()
       .rect(0, 0, app.screen.width - 400, 200)
       .fill({ color: 0x233343 })
       .stroke({ width: 2, color: 0x445566 });
     playArea.x = 200;
-    playArea.y = isBot ? areaHeight + 20 : -220;
+    playArea.y = isBot ? areaHeight : -200;
 
     // Discard Pile (right side)
     const discardPile = new Graphics()
@@ -99,6 +99,12 @@ import { GameManager } from './src/game/GameManager.js';
   // Add areas to stage
   app.stage.addChild(bot.container);
   app.stage.addChild(player.container);
+
+  // Wait for both deck managers to initialize
+  await Promise.all([
+    player.deckManager.initializeGame(),
+    bot.deckManager.initializeGame()
+  ]);
 
   // Draw initial hands (7 cards each)
   for (let i = 0; i < 7; i++) {

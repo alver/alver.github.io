@@ -1,4 +1,4 @@
-import { Container, Graphics, Text } from '../../pixi.min.mjs';
+import { Container, Graphics, Text, Sprite, Assets } from '../../pixi.min.mjs';
 import { exampleCards } from './cardExamples.js';
 
 export class DeckManager {
@@ -13,8 +13,29 @@ export class DeckManager {
         this.cardsPlayedThisTurn = 0;
         this.isMyTurn = !isBot;
         
+        // Load card textures before initializing
+        this.initializeGame();
+    }
+
+    async initializeGame() {
+        // Load all card textures first
+        await this.loadCardTextures();
         this.initializeDeck();
         this.createDeckVisuals();
+    }
+
+    async loadCardTextures() {
+        // Load all unique card images
+        const uniqueImages = new Set(Object.values(exampleCards).map(card => card.imageUrl));
+        for (const imageUrl of uniqueImages) {
+            if (imageUrl) {
+                try {
+                    await Assets.load(imageUrl);
+                } catch (error) {
+                    console.error('Error loading texture:', imageUrl, error);
+                }
+            }
+        }
     }
 
     initializeDeck() {
@@ -77,6 +98,21 @@ export class DeckManager {
 
         // Show card details if it's player's card or card is played
         if (!this.isBot || !inHand) {
+            // Add card image
+            if (card.imageUrl) {
+                try {
+                    const texture = Assets.get(card.imageUrl);
+                    const cardImage = new Sprite(texture);
+                    cardImage.width = 110;  // Slightly smaller than card
+                    cardImage.height = 90;  // Leave room for text
+                    cardImage.x = 5;        // Center in card
+                    cardImage.y = 25;       // Below title
+                    cardContainer.addChild(cardImage);
+                } catch (error) {
+                    console.error('Error creating card sprite:', error);
+                }
+            }
+
             // Add card name
             const nameText = new Text({
                 text: card.name,

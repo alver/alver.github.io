@@ -25,12 +25,12 @@ export const exampleCards = {
     // Creature card example
     hippogriff: new CreatureCard({
         id: 'creature_001',
-        name: 'Hippogriff',
-        imageUrl: 'assets/cards/hippogriff.jpg',
+        name: 'Flyffy',
+        imageUrl: 'assets/cards/fluffy.jpg',
         rarity: 'rare',
-        lessonCost: { creatures: 3 },
-        power: 30,
-        health: 40,
+        lessonCost: { creatures: 10 },
+        power: 12,
+        health: 21,
         abilities: ['Flying']
     })
 }; 
