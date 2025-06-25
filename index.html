@@ -187,6 +187,27 @@ function selectItem(item) {
   selectLevel(levels[0] || null);
 }
 
+// Loads gzipped SVG sprite, decompresses, and injects into DOM
+async function loadAndInjectSvgSprite(spriteGzUrl, injectedId = "svg-sprite") {
+  try {
+    const res = await fetch(spriteGzUrl);
+    if (!res.ok) throw new Error(`Failed to fetch sprite: ${res.status}`);
+    const gzBuffer = await res.arrayBuffer();
+    const svgText = new TextDecoder().decode(pako.ungzip(gzBuffer));
+    // Remove any previous injected sprite
+    document.getElementById(injectedId)?.remove();
+    // Create a container and inject the SVG
+    const div = document.createElement("div");
+    div.id = injectedId;
+    div.style.display = "none";
+    div.innerHTML = svgText;
+    document.body.prepend(div);
+  } catch (e) {
+    console.error("Failed to load SVG sprite:", e);
+    alert("Could not load SVG icons.");
+  }
+}
+
 function populateUI(newByItem, itemConfig) {
   try {
     // 1. Clear previous state
@@ -200,7 +221,6 @@ function populateUI(newByItem, itemConfig) {
     const allowedItems = Object.values(itemConfig);
 
     // 3. Rebuild UI
-    const spriteUrl = 'https://raw.githubusercontent.com/alver/alver.github.io/main/items_sprite.6d12eb9d.svg';
     const allAvailableItems = allowedItems.flat().filter(itm => byItem[itm]);
 
     for (const column of allowedItems) {
@@ -219,7 +239,8 @@ function populateUI(newByItem, itemConfig) {
           const iconId = itm.replace('/items/', '');
           const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
           const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-          use.setAttribute('href', `${spriteUrl}#${iconId}`);
+          // Reference the in-DOM sprite symbol
+          use.setAttribute('href', `#${iconId}`);
           svg.appendChild(use);
           link.appendChild(svg);
 
@@ -287,7 +308,7 @@ async function loadInitialData() {
     }
 }
 
-function main() {
+async function main() {
   // File loading logic
   const loadDataButton = document.getElementById('loadDataButton');
   const dataFileInput = document.getElementById('dataFile');
@@ -335,6 +356,8 @@ function main() {
     draw();
   });
 
+  // Load and inject the SVG sprite before loading data/UI
+  await loadAndInjectSvgSprite('items_sprite_filtered.svg.gz');
   loadInitialData();
 }
 main();
