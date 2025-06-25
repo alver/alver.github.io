@@ -123,8 +123,8 @@ function draw(){
       ]
     },
     options:{
-      responsive:true, 
-      maintainAspectRatio: false, 
+      responsive:true,
+      maintainAspectRatio: false,
       scales:{
         y:{
           beginAtZero:false,
@@ -173,7 +173,7 @@ function selectItem(item) {
       levelButtons.appendChild(btn);
     }
   }
-  
+
   selectLevel(levels[0] || null);
 }
 
@@ -204,7 +204,7 @@ function loadDataAndRender(csvText) {
     ];
 
     // 3. Rebuild UI
-    const spriteUrl = 'items_sprite.6d12eb9d.svg';
+    const spriteUrl = 'https://www.milkywayidle.com/static/media/items_sprite.6d12eb9d.svg';
     const allAvailableItems = allowedItems.flat().filter(itm => byItem[itm]);
 
     for (const column of allowedItems) {
