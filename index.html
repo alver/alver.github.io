@@ -2,7 +2,7 @@
 <!doctype html><meta charset="utf-8">
 <title>Market viewer</title>
 <script src="chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+<script src="pako.min.js"></script>
 <style>
  :root {
   --bg-color: #ffffff;
@@ -130,8 +130,8 @@ function draw(){
       ]
     },
     options:{
-      responsive:true, 
-      maintainAspectRatio: false, 
+      responsive:true,
+      maintainAspectRatio: false,
       scales:{
         y:{
           beginAtZero:false,
@@ -183,7 +183,7 @@ function selectItem(item) {
       levelButtons.appendChild(btn);
     }
   }
-  
+
   selectLevel(levels[0] || null);
 }
 
@@ -200,7 +200,7 @@ function populateUI(newByItem, itemConfig) {
     const allowedItems = Object.values(itemConfig);
 
     // 3. Rebuild UI
-    const spriteUrl = 'items_sprite.6d12eb9d.svg';
+    const spriteUrl = 'https://github.com/alver/alver.github.io/releases/download/v1.0/items_sprite.6d12eb9d.svg';
     const allAvailableItems = allowedItems.flat().filter(itm => byItem[itm]);
 
     for (const column of allowedItems) {
