@@ -2,6 +2,7 @@
 <!doctype html><meta charset="utf-8">
 <title>Market viewer</title>
 <script src="chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
 <style>
  :root {
   --bg-color: #ffffff;
@@ -25,7 +26,7 @@
  #wrap{}
  h2{margin-top:0; display: flex; justify-content: space-between; align-items: center;}
  .header-controls { display: flex; align-items: center; gap: 1rem; }
- #loadCsvButton { padding: 5px 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); cursor: pointer; border-radius: 4px; }
+ #loadDataButton { padding: 5px 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); cursor: pointer; border-radius: 4px; }
  .theme-switcher { display: inline-flex; align-items: center; cursor: pointer; }
  .theme-switcher input { display: none; }
  .theme-switcher .slider { position: relative; display: block; width: 40px; height: 20px; background-color: #ccc; border-radius: 20px; transition: background-color 0.2s; }
@@ -40,8 +41,8 @@
  .item-column { display: flex; flex-direction: column; gap: 0.5rem; }
  #itemLinks a {
   box-sizing: border-box;
-  width: 50px;
-  height: 50px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -64,11 +65,12 @@
   <h2>
     <div class="header-controls">
       <span>Market Viewer</span>
-      <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
-      <button id="loadCsvButton">Load Local CSV</button>
+      <input type="file" id="dataFile" accept=".json.gz" style="display: none;">
+      <button id="loadDataButton">Load Local Data</button>
+      <span id="lastDataInfo" style="margin-left:1em;font-size:0.95em;color:var(--text-color)"></span>
     </div>
     <div class="theme-control">
-      <span>theme</span>
+      <span>Theme</span>
       <label class="theme-switcher">
         <input type="checkbox" id="themeToggle">
         <span class="slider"></span>
@@ -128,8 +130,8 @@ function draw(){
       ]
     },
     options:{
-      responsive:true,
-      maintainAspectRatio: false,
+      responsive:true, 
+      maintainAspectRatio: false, 
       scales:{
         y:{
           beginAtZero:false,
@@ -181,36 +183,21 @@ function selectItem(item) {
       levelButtons.appendChild(btn);
     }
   }
-
+  
   selectLevel(levels[0] || null);
 }
 
-function loadDataAndRender(csvText) {
+function populateUI(newByItem, itemConfig) {
   try {
     // 1. Clear previous state
     itemLinks.innerHTML = '';
     levelButtons.innerHTML = '';
     chart?.destroy();
     chart = null;
-    byItem = {};
     document.getElementById('currentItemName').textContent = '';
+    byItem = newByItem;
 
-    // 2. Parse CSV and build data structures
-    const rows = parseCSV(csvText);
-    for (const r of rows){
-      const {item,lvl,ask,bid,ts} = r;
-      const t = new Date(+ts*1000);
-      (byItem[item] ??= {})[lvl] ??= [];
-      byItem[item][lvl].push({t, ask:+ask, bid:+bid});
-    }
-
-    // Hardcoded list of allowed items
-    const allowedItems = [
-      ["/items/acrobatic_hood", "/items/sundering_crossbow", "/items/sorcerer_essence", "/items/sorcerers_sole"], // Equipment
-      ["/items/water_strike", "/items/ice_spear", "/items/fireball"], // Spells
-      ["/items/star_fruit_gummy", "/items/star_fruit_yogurt", "/items/spaceberry_cake"], // Food
-      ["/items/ranged_coffee", "/items/super_ranged_coffee", "/items/swiftness_coffee", "/items/critical_coffee"] // Potions
-    ];
+    const allowedItems = Object.values(itemConfig);
 
     // 3. Rebuild UI
     const spriteUrl = 'items_sprite.6d12eb9d.svg';
@@ -259,24 +246,73 @@ function loadDataAndRender(csvText) {
   }
 }
 
+function updateLastDataInfo(rows) {
+  if (!rows || !rows.length) {
+    document.getElementById('lastDataInfo').textContent = '';
+    return;
+  }
+  // Find the latest timestamp
+  const latestTs = Math.max(...rows.map(r => r[0]));
+  const dt = new Date(latestTs * 1000);
+  const dateStr = dt.toLocaleDateString();
+  const timeStr = dt.toLocaleTimeString();
+  document.getElementById('lastDataInfo').textContent = `Last data: ${dateStr} - ${timeStr}`;
+}
+
+function parseCompactData(buffer) {
+    const text = new TextDecoder().decode(pako.ungzip(buffer));
+    const {items, rows, config} = JSON.parse(text);
+    updateLastDataInfo(rows);
+
+    const newByItem = {};
+    for (const [ts, idx, lvl, ask, bid] of rows){
+        const it = items[idx];
+        (newByItem[it] ??= {})[lvl] ??= [];
+        newByItem[it][lvl].push({ t: new Date(ts*1000), ask, bid });
+    }
+    return {newByItem, config};
+}
+
+async function loadInitialData() {
+    try {
+        const res = await fetch('market.compact.json.gz');
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const buffer = await res.arrayBuffer();
+        const {newByItem, config} = parseCompactData(buffer);
+        populateUI(newByItem, config);
+    } catch (e) {
+        console.log("Could not load initial data. Waiting for local file.", e);
+    }
+}
+
 function main() {
   // File loading logic
-  const loadCsvButton = document.getElementById('loadCsvButton');
-  const csvFileInput = document.getElementById('csvFileInput');
+  const loadDataButton = document.getElementById('loadDataButton');
+  const dataFileInput = document.getElementById('dataFile');
 
-  loadCsvButton.addEventListener('click', () => csvFileInput.click());
+  loadDataButton.addEventListener('click', () => dataFileInput.click());
 
-  csvFileInput.addEventListener('change', (event) => {
+  dataFileInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => loadDataAndRender(e.target.result);
+    reader.onload = (e) => {
+        try {
+            const {newByItem, config} = parseCompactData(e.target.result);
+            populateUI(newByItem, config);
+        } catch(err) {
+            console.error("Error processing file", err);
+            alert("Error processing file: " + err);
+        }
+    };
     reader.onerror = (e) => {
         console.error("File could not be read!", e);
         alert("Error reading file.");
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
   });
 
   // Theme switcher logic
@@ -298,6 +334,8 @@ function main() {
     // Redraw chart to update colors
     draw();
   });
+
+  loadInitialData();
 }
 main();
 </script>

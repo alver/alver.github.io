@@ -1,0 +1,65 @@
+{
+  "Resources": [
+    "/items/icy_cloth",
+    "/items/flaming_cloth",
+    "/items/sorcerers_sole",
+    "/items/chrono_sphere",
+    "/items/frost_sphere"
+  ],
+  "Chimerical": [
+    "/items/griffin_leather",
+    "/items/manticore_sting",
+    "/items/jackalope_antler",
+    "/items/dodocamel_plume",
+    "/items/griffin_talon"
+  ],
+  "Sinister": [
+    "/items/acrobats_ribbon",
+    "/items/magicians_cloth",
+    "/items/chaotic_chain",
+    "/items/cursed_ball"
+  ],
+  "Essence": [
+    "/items/sorcerer_essence",
+    "/items/chimerical_essence",
+    "/items/sinister_essence"
+  ],
+  "Gems": [
+    "/items/pearl",
+    "/items/amber",
+    "/items/garnet",
+    "/items/jade",
+    "/items/amethyst",
+    "/items/moonstone",
+    "/items/sunstone"
+  ],
+  "Consumables": [
+    "/items/spaceberry_donut",
+    "/items/spaceberry_cake",
+    "/items/star_fruit_gummy",
+    "/items/star_fruit_yogurt",
+    "/items/ranged_coffee",
+    "/items/super_ranged_coffee",
+    "/items/ultra_ranged_coffee",
+    "/items/wisdom_coffee",
+    "/items/lucky_coffee",
+    "/items/swiftness_coffee",
+    "/items/critical_coffee"
+  ],
+  "Books": [
+    "/items/water_strike",
+    "/items/ice_spear",
+    "/items/fireball"
+  ],
+  "Keys": [
+    "/items/chimerical_entry_key",
+    "/items/chimerical_chest_key",
+    "/items/sinister_entry_key",
+    "/items/sinister_chest_key"
+  ],
+  "Equipment":
+  [
+    "/items/acrobatic_hood",
+    "/items/sundering_crossbow"
+  ]
+}
