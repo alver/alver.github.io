@@ -1,0 +1,294 @@
+<!-- index.html -->
+<!doctype html><meta charset="utf-8">
+<title>Market viewer</title>
+<script src="chart.js"></script>
+<style>
+ :root {
+  --bg-color: #ffffff;
+  --text-color: #222222;
+  --border-color: #dddddd;
+  --link-color: #007bff;
+  --link-bg-hover: #f0f0f0;
+  --active-bg: #007bff;
+  --active-text: #ffffff;
+ }
+ [data-theme="dark"] {
+  --bg-color: #22272e;
+  --text-color: #cdd9e5;
+  --border-color: #444c56;
+  --link-color: #58a6ff;
+  --link-bg-hover: #2d333b;
+  --active-bg: #58a6ff;
+  --active-text: #1c2128;
+ }
+ body{font:14px/1.4 sans-serif;margin:2rem; background: var(--bg-color); color: var(--text-color); transition: background 0.2s, color 0.2s;}
+ #wrap{}
+ h2{margin-top:0; display: flex; justify-content: space-between; align-items: center;}
+ .header-controls { display: flex; align-items: center; gap: 1rem; }
+ #loadCsvButton { padding: 5px 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); cursor: pointer; border-radius: 4px; }
+ .theme-switcher { display: inline-flex; align-items: center; cursor: pointer; }
+ .theme-switcher input { display: none; }
+ .theme-switcher .slider { position: relative; display: block; width: 40px; height: 20px; background-color: #ccc; border-radius: 20px; transition: background-color 0.2s; }
+ .theme-switcher .slider::before { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background-color: white; border-radius: 50%; transition: transform 0.2s; }
+ .theme-switcher input:checked + .slider { background-color: var(--active-bg); }
+ .theme-switcher input:checked + .slider::before { transform: translateX(20px); }
+
+ .theme-control { display: flex; align-items: center; gap: 0.5rem; }
+
+ #main-content { display: flex; gap: 2rem; align-items: flex-start; }
+ #itemLinks { display: flex; flex-direction: row; gap: 1rem; width: auto; flex-shrink: 0; }
+ .item-column { display: flex; flex-direction: column; gap: 0.5rem; }
+ #itemLinks a {
+  box-sizing: border-box;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+ }
+ #itemLinks a:hover { background: var(--link-bg-hover); }
+ #itemLinks a.active { font-weight: bold; background: var(--active-bg); color: var(--active-text); border-color: var(--active-bg); }
+ #itemLinks a svg { width: 40px; height: 40px; }
+ #chart-container { flex-grow: 1; position: relative; height: 60vh; }
+ #levelButtons { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+ #levelButtons button { padding: 5px 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); cursor: pointer; border-radius: 4px; }
+ #levelButtons button.active { background: var(--active-bg); color: var(--active-text); border-color: var(--active-bg); }
+</style>
+
+<div id="wrap">
+  <h2>
+    <div class="header-controls">
+      <span>Market Viewer</span>
+      <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+      <button id="loadCsvButton">Load Local CSV</button>
+    </div>
+    <div class="theme-control">
+      <span>theme</span>
+      <label class="theme-switcher">
+        <input type="checkbox" id="themeToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </h2>
+  <div id="main-content">
+    <div id="itemLinks"></div>
+    <div id="chart-container">
+      <canvas id="chart"></canvas>
+      <div id="levelButtons"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function parseCSV(text){
+  const [hdrLine, ...lines] = text.trim().split(/\r?\n/);
+  const keys = hdrLine.split(",");
+  return lines.filter(Boolean).map(l => {
+    const vals = l.split(",");
+    return Object.fromEntries(vals.map((v,i)=>[keys[i], v]));
+  });
+}
+
+// Global state
+let byItem = {};
+let chart;
+let currentItem;
+let currentLvl;
+
+const itemLinks = document.getElementById('itemLinks');
+const levelButtons = document.getElementById('levelButtons');
+const chartCanvas = document.getElementById('chart');
+
+function draw(){
+  if (!currentItem || !currentLvl || !byItem[currentItem] || !byItem[currentItem][currentLvl]) {
+    chart?.destroy();
+    chart = null;
+    return;
+  }
+  const series = byItem[currentItem][currentLvl];
+  series.sort((a,b)=>a.t-b.t);
+  const labels = series.map(p=>p.t.toLocaleString());
+  const ask    = series.map(p=>p.ask);
+  const bid    = series.map(p=>p.bid);
+  const cfg = {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Ask', data:ask, borderWidth:2, tension: 0.1},
+        {label:'Bid', data:bid, borderWidth:2, tension: 0.1}
+      ]
+    },
+    options:{
+      responsive:true, 
+      maintainAspectRatio: false, 
+      scales:{
+        y:{
+          beginAtZero:false,
+          ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-color') },
+          grid: { color: getComputedStyle(document.body).getPropertyValue('--border-color') }
+        },
+        x:{
+          ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-color') },
+          grid: { color: getComputedStyle(document.body).getPropertyValue('--border-color') }
+        }
+      },
+      plugins: {
+        legend: {
+          labels: { color: getComputedStyle(document.body).getPropertyValue('--text-color') }
+        }
+      }
+    }
+  };
+  chart?.destroy();
+  chart = new Chart(chartCanvas, cfg);
+}
+
+function selectLevel(level) {
+  currentLvl = level;
+  document.querySelectorAll('#levelButtons button').forEach(b => {
+    b.classList.toggle('active', b.dataset.level === level);
+  });
+  draw();
+}
+
+function selectItem(item) {
+  currentItem = item;
+  document.querySelectorAll('#itemLinks a').forEach(a => {
+    a.classList.toggle('active', a.dataset.item === item);
+  });
+
+  levelButtons.innerHTML = '';
+  const levels = Object.keys(byItem[item] || {}).sort((a,b)=>a-b);
+
+  if (levels.length > 1) {
+    for (const lvl of levels) {
+      const btn = document.createElement('button');
+      btn.textContent = `+${lvl}`;
+      btn.dataset.level = lvl;
+      btn.onclick = () => selectLevel(lvl);
+      levelButtons.appendChild(btn);
+    }
+  }
+  
+  selectLevel(levels[0] || null);
+}
+
+function loadDataAndRender(csvText) {
+  try {
+    // 1. Clear previous state
+    itemLinks.innerHTML = '';
+    levelButtons.innerHTML = '';
+    chart?.destroy();
+    chart = null;
+    byItem = {};
+
+    // 2. Parse CSV and build data structures
+    const rows = parseCSV(csvText);
+    for (const r of rows){
+      const {item,lvl,ask,bid,ts} = r;
+      const t = new Date(+ts*1000);
+      (byItem[item] ??= {})[lvl] ??= [];
+      byItem[item][lvl].push({t, ask:+ask, bid:+bid});
+    }
+
+    // Hardcoded list of allowed items
+    const allowedItems = [
+      ["/items/acrobatic_hood", "/items/sundering_crossbow", "/items/sorcerer_essence", "/items/sorcerers_sole"], // Equipment
+      ["/items/water_strike", "/items/ice_spear", "/items/fireball"], // Spells
+      ["/items/star_fruit_gummy", "/items/star_fruit_yogurt", "/items/spaceberry_cake"], // Food
+      ["/items/ranged_coffee", "/items/super_ranged_coffee", "/items/swiftness_coffee", "/items/critical_coffee"] // Potions
+    ];
+
+    // 3. Rebuild UI
+    const spriteUrl = 'items_sprite.6d12eb9d.svg';
+    const allAvailableItems = allowedItems.flat().filter(itm => byItem[itm]);
+
+    for (const column of allowedItems) {
+      const columnDiv = document.createElement('div');
+      columnDiv.className = 'item-column';
+
+      const availableItemsInColumn = column.filter(itm => byItem[itm]);
+
+      if (availableItemsInColumn.length > 0) {
+        for(const itm of availableItemsInColumn) {
+          const link = document.createElement('a');
+          link.href = '#';
+          link.dataset.item = itm;
+          link.title = itm.replace('/items/', '').replace(/_/g, ' ');
+
+          const iconId = itm.replace('/items/', '');
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+          use.setAttribute('href', `${spriteUrl}#${iconId}`);
+          svg.appendChild(use);
+          link.appendChild(svg);
+
+          link.onclick = (e) => {
+            e.preventDefault();
+            selectItem(itm);
+          }
+          columnDiv.appendChild(link);
+        }
+        itemLinks.appendChild(columnDiv);
+      }
+    }
+
+    // 4. Select first item to render chart
+    if (allAvailableItems.length > 0) {
+      selectItem(allAvailableItems[0]);
+    } else {
+      draw(); // Draw empty state if no items from the file are in our list
+    }
+
+  } catch (e) {
+    console.error(e);
+    alert('Error loading data: ' + e);
+  }
+}
+
+function main() {
+  // File loading logic
+  const loadCsvButton = document.getElementById('loadCsvButton');
+  const csvFileInput = document.getElementById('csvFileInput');
+
+  loadCsvButton.addEventListener('click', () => csvFileInput.click());
+
+  csvFileInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => loadDataAndRender(e.target.result);
+    reader.onerror = (e) => {
+        console.error("File could not be read!", e);
+        alert("Error reading file.");
+    };
+    reader.readAsText(file);
+  });
+
+  // Theme switcher logic
+  const themeToggle = document.getElementById('themeToggle');
+  const body = document.body;
+
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  body.dataset.theme = savedTheme;
+  themeToggle.checked = savedTheme === 'dark';
+
+  themeToggle.addEventListener('change', () => {
+    if (themeToggle.checked) {
+      body.dataset.theme = 'dark';
+      localStorage.setItem('theme', 'dark');
+    } else {
+      body.dataset.theme = 'light';
+      localStorage.setItem('theme', 'light');
+    }
+    // Redraw chart to update colors
+    draw();
+  });
+}
+main();
+</script>
