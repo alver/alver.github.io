@@ -52,7 +52,9 @@
  #itemLinks a:hover { background: var(--link-bg-hover); }
  #itemLinks a.active { font-weight: bold; background: var(--active-bg); color: var(--active-text); border-color: var(--active-bg); }
  #itemLinks a svg { width: 40px; height: 40px; }
- #chart-container { flex-grow: 1; position: relative; height: 60vh; }
+ #chart-container { flex-grow: 1; display: flex; flex-direction: column; }
+ #currentItemName { text-align: center; margin: 0; padding-bottom: 1rem; height: 1.2em; text-transform: capitalize; }
+ #canvas-wrapper { position: relative; height: 60vh; flex-grow: 1; }
  #levelButtons { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
  #levelButtons button { padding: 5px 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); cursor: pointer; border-radius: 4px; }
  #levelButtons button.active { background: var(--active-bg); color: var(--active-text); border-color: var(--active-bg); }
@@ -76,7 +78,10 @@
   <div id="main-content">
     <div id="itemLinks"></div>
     <div id="chart-container">
-      <canvas id="chart"></canvas>
+      <h3 id="currentItemName"></h3>
+      <div id="canvas-wrapper">
+        <canvas id="chart"></canvas>
+      </div>
       <div id="levelButtons"></div>
     </div>
   </div>
@@ -161,6 +166,9 @@ function selectItem(item) {
     a.classList.toggle('active', a.dataset.item === item);
   });
 
+  const itemName = item ? item.replace('/items/', '').replace(/_/g, ' ') : '';
+  document.getElementById('currentItemName').textContent = itemName;
+
   levelButtons.innerHTML = '';
   const levels = Object.keys(byItem[item] || {}).sort((a,b)=>a-b);
 
@@ -185,6 +193,7 @@ function loadDataAndRender(csvText) {
     chart?.destroy();
     chart = null;
     byItem = {};
+    document.getElementById('currentItemName').textContent = '';
 
     // 2. Parse CSV and build data structures
     const rows = parseCSV(csvText);
@@ -204,7 +213,7 @@ function loadDataAndRender(csvText) {
     ];
 
     // 3. Rebuild UI
-    const spriteUrl = 'https://www.milkywayidle.com/static/media/items_sprite.6d12eb9d.svg';
+    const spriteUrl = 'items_sprite.6d12eb9d.svg';
     const allAvailableItems = allowedItems.flat().filter(itm => byItem[itm]);
 
     for (const column of allowedItems) {
