@@ -104,10 +104,39 @@ let byItem = {};
 let chart;
 let currentItem;
 let currentLvl;
+let itemConfig;
 
 const itemLinks = document.getElementById('itemLinks');
 const levelButtons = document.getElementById('levelButtons');
 const chartCanvas = document.getElementById('chart');
+
+function updateItemName() {
+  const itemName = currentItem ? currentItem.replace('/items/', '').replace(/_/g, ' ') : '';
+  const currentItemNameEl = document.getElementById('currentItemName');
+  let nameContent = itemName;
+
+  if (currentItem && itemConfig && itemConfig.ItemTokenPrices && itemConfig.ItemTokenPrices[currentItem]) {
+    const tokenPrice = itemConfig.ItemTokenPrices[currentItem];
+    if (currentLvl && byItem[currentItem] && byItem[currentItem][currentLvl]) {
+        const series = byItem[currentItem][currentLvl];
+        if (series.length > 0) {
+            const sortedSeries = [...series].sort((a,b)=>a.t-b.t);
+            const lastBid = sortedSeries[sortedSeries.length - 1].bid;
+            if (lastBid && tokenPrice > 0) {
+                const moneyPerToken = (lastBid / tokenPrice).toFixed(2);
+                nameContent += ` (${tokenPrice} - ${moneyPerToken})`;
+            } else {
+                 nameContent += ` (${tokenPrice} tokens)`;
+            }
+        } else {
+            nameContent += ` (${tokenPrice} tokens)`;
+        }
+    } else {
+        nameContent += ` (${tokenPrice} tokens)`;
+    }
+  }
+  currentItemNameEl.textContent = nameContent;
+}
 
 function draw(){
   if (!currentItem || !currentLvl || !byItem[currentItem] || !byItem[currentItem][currentLvl]) {
@@ -159,6 +188,7 @@ function selectLevel(level) {
   document.querySelectorAll('#levelButtons button').forEach(b => {
     b.classList.toggle('active', b.dataset.level === level);
   });
+  updateItemName();
   draw();
 }
 
@@ -167,9 +197,6 @@ function selectItem(item) {
   document.querySelectorAll('#itemLinks a').forEach(a => {
     a.classList.toggle('active', a.dataset.item === item);
   });
-
-  const itemName = item ? item.replace('/items/', '').replace(/_/g, ' ') : '';
-  document.getElementById('currentItemName').textContent = itemName;
 
   levelButtons.innerHTML = '';
   const levels = Object.keys(byItem[item] || {}).sort((a,b)=>a-b);
@@ -208,7 +235,7 @@ async function loadAndInjectSvgSprite(spriteGzUrl, injectedId = "svg-sprite") {
   }
 }
 
-function populateUI(newByItem, itemConfig) {
+function populateUI(newByItem, newItemConfig) {
   try {
     // 1. Clear previous state
     itemLinks.innerHTML = '';
@@ -217,8 +244,9 @@ function populateUI(newByItem, itemConfig) {
     chart = null;
     document.getElementById('currentItemName').textContent = '';
     byItem = newByItem;
+    itemConfig = newItemConfig;
 
-    const allowedItems = Object.values(itemConfig);
+    const allowedItems = Object.values(itemConfig).filter(v => Array.isArray(v));
 
     // 3. Rebuild UI
     const allAvailableItems = allowedItems.flat().filter(itm => byItem[itm]);

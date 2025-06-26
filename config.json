@@ -1,5 +1,6 @@
 {
   "Resources": [
+    "/items/bag_of_10_cowbells",
     "/items/icy_cloth",
     "/items/flaming_cloth",
     "/items/sorcerers_sole",
@@ -49,17 +50,38 @@
   "Books": [
     "/items/water_strike",
     "/items/ice_spear",
-    "/items/fireball"
+    "/items/fireball",
+    "/items/flame_blast",
+    "/items/heal",
+    "/items/frost_surge",
+    "/items/elemental_affinity",
+    "/items/penetrating_strike",
+    "/items/pestilent_shot",
+    "/items/smoke_burst"
   ],
   "Keys": [
     "/items/chimerical_entry_key",
     "/items/chimerical_chest_key",
     "/items/sinister_entry_key",
-    "/items/sinister_chest_key"
+    "/items/sinister_chest_key",
+    "/items/enchanted_entry_key",
+    "/items/enchanted_chest_key"
   ],
   "Equipment":
   [
     "/items/acrobatic_hood",
-    "/items/sundering_crossbow"
-  ]
+    "/items/sundering_crossbow",
+    "/items/cursed_bow"
+  ],
+  "ItemTokenPrices": {
+    "/items/griffin_leather": 600,
+    "/items/manticore_sting": 1000,
+    "/items/jackalope_antler": 1200,
+    "/items/dodocamel_plume": 3000,
+    "/items/griffin_talon": 3000,
+    "/items/acrobats_ribbon": 2000,
+    "/items/magicians_cloth": 2000,
+    "/items/chaotic_chain": 3000,
+    "/items/cursed_ball": 3000
+  }
 }
