@@ -3,6 +3,7 @@
 <title>Market viewer</title>
 <script src="chart.js"></script>
 <script src="pako.min.js"></script>
+<script src="chartjs-adapter-date-fns.js"></script>
 <style>
  :root {
   --bg-color: #ffffff;
@@ -146,28 +147,34 @@ function draw(){
   }
   const series = byItem[currentItem][currentLvl];
   series.sort((a,b)=>a.t-b.t);
-  const labels = series.map(p=>p.t.toLocaleString());
-  const ask    = series.map(p=>p.ask);
-  const bid    = series.map(p=>p.bid);
+  const askData = series.map(p => ({ x: p.t, y: p.ask }));
+  const bidData = series.map(p => ({ x: p.t, y: p.bid }));
   const cfg = {
     type:'line',
     data:{
-      labels,
       datasets:[
-        {label:'Ask', data:ask, borderWidth:2, tension: 0.1},
-        {label:'Bid', data:bid, borderWidth:2, tension: 0.1}
+        {label:'Ask', data:askData, borderWidth:2, tension: 0.1},
+        {label:'Bid', data:bidData, borderWidth:2, tension: 0.1}
       ]
     },
     options:{
       responsive:true,
       maintainAspectRatio: false,
       scales:{
-        y:{
-          beginAtZero:false,
+        x:{
+          type: 'time',
+          time: {
+            unit: 'day',
+            displayFormats: {
+              day: 'MMM dd'
+            }
+          },
           ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-color') },
           grid: { color: getComputedStyle(document.body).getPropertyValue('--border-color') }
         },
-        x:{
+        y:{
+          position: 'right',
+          beginAtZero:false,
           ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-color') },
           grid: { color: getComputedStyle(document.body).getPropertyValue('--border-color') }
         }
