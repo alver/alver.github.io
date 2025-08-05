@@ -38,7 +38,7 @@
  .theme-control { display: flex; align-items: center; gap: 0.5rem; }
 
  #main-content { display: flex; gap: 2rem; align-items: flex-start; }
- #itemLinks { display: flex; flex-direction: row; gap: 1rem; width: auto; flex-shrink: 0; }
+ #itemLinks { display: flex; flex-direction: row; gap: 1rem; flex-shrink: 0; }
  .item-column { display: flex; flex-direction: column; gap: 0.5rem; }
  #itemLinks a {
   box-sizing: border-box;
@@ -54,12 +54,59 @@
  #itemLinks a:hover { background: var(--link-bg-hover); }
  #itemLinks a.active { font-weight: bold; background: var(--active-bg); color: var(--active-text); border-color: var(--active-bg); }
  #itemLinks a svg { width: 40px; height: 40px; }
- #chart-container { flex-grow: 1; display: flex; flex-direction: column; }
+ #chart-container { flex-grow: 1; display: flex; flex-direction: column; width: 66.67%; }
  #currentItemName { text-align: center; margin: 0; padding-bottom: 1rem; height: 1.2em; text-transform: capitalize; }
  #canvas-wrapper { position: relative; height: 60vh; flex-grow: 1; }
  #levelButtons { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
  #levelButtons button { padding: 5px 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); cursor: pointer; border-radius: 4px; }
  #levelButtons button.active { background: var(--active-bg); color: var(--active-text); border-color: var(--active-bg); }
+ #categoryTabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.category-tab {
+  padding: 0.5rem 1.2rem;
+  border: none;
+  background: var(--bg-color);
+  color: var(--text-color);
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.category-tab.active {
+  background: var(--active-bg);
+  color: var(--active-text);
+  border-bottom: 2px solid var(--active-bg);
+}
+ #trendTabs {
+   display: flex;
+   gap: 0.5rem;
+   margin-bottom: 1rem;
+ }
+ .trend-tab {
+   padding: 0.5rem 1rem;
+   border: 1px solid var(--border-color);
+   background: var(--bg-color);
+   color: var(--text-color);
+   border-radius: 4px;
+   cursor: pointer;
+   font-weight: 500;
+   transition: background 0.2s, color 0.2s, border-color 0.2s;
+ }
+ .trend-tab.active {
+   background: var(--active-bg);
+   color: var(--active-text);
+   border-color: var(--active-bg);
+ }
+ .trend-table {
+   display: none;
+ }
+ .trend-table.active {
+   display: block;
+ }
 </style>
 
 <div id="wrap">
@@ -78,8 +125,11 @@
       </label>
     </div>
   </h2>
+  <div id="categoryTabs" style="width: 100%; margin-bottom: 1rem;"></div>
   <div id="main-content">
-    <div id="itemLinks"></div>
+    <div style="display: flex; flex-direction: column; width: 33.33%;">
+      <div id="itemLinks"></div>
+    </div>
     <div id="chart-container">
       <h3 id="currentItemName"></h3>
       <div id="canvas-wrapper">
@@ -88,6 +138,7 @@
       <div id="levelButtons"></div>
     </div>
   </div>
+  <div id="trendTableContainer" style="width: 100%; margin-top: 2rem;"></div>
 </div>
 
 <script>
@@ -106,6 +157,7 @@ let chart;
 let currentItem;
 let currentLvl;
 let itemConfig;
+let currentCategory = null;
 
 const itemLinks = document.getElementById('itemLinks');
 const levelButtons = document.getElementById('levelButtons');
@@ -221,6 +273,105 @@ function selectItem(item) {
   selectLevel(levels[0] || null);
 }
 
+function renderTrendTable(trends_3d, trends_7d, trends_30d) {
+  const container = document.getElementById('trendTableContainer');
+  container.innerHTML = '';
+  
+  if ((!trends_3d || !trends_3d.length) && (!trends_7d || !trends_7d.length) && (!trends_30d || !trends_30d.length)) return;
+  
+  // Create tabs
+  const tabsDiv = document.createElement('div');
+  tabsDiv.id = 'trendTabs';
+  
+  const tab3d = document.createElement('button');
+  tab3d.textContent = '3 Days';
+  tab3d.className = 'trend-tab active';
+  tab3d.onclick = () => switchTrendTab('3d');
+  
+  const tab7d = document.createElement('button');
+  tab7d.textContent = '7 Days';
+  tab7d.className = 'trend-tab';
+  tab7d.onclick = () => switchTrendTab('7d');
+  
+  const tab30d = document.createElement('button');
+  tab30d.textContent = '30 Days';
+  tab30d.className = 'trend-tab';
+  tab30d.onclick = () => switchTrendTab('30d');
+  
+  tabsDiv.appendChild(tab3d);
+  tabsDiv.appendChild(tab7d);
+  tabsDiv.appendChild(tab30d);
+  
+  // Create tables
+  const table3d = createTrendTable(trends_3d || [], '3d');
+  const table7d = createTrendTable(trends_7d || [], '7d');
+  const table30d = createTrendTable(trends_30d || [], '30d');
+  
+  // Add heading
+  const heading = document.createElement('h4');
+  heading.textContent = 'Market Trends';
+  heading.style.margin = '2rem 0 0.5rem 0';
+  
+  container.appendChild(heading);
+  container.appendChild(tabsDiv);
+  container.appendChild(table3d);
+  container.appendChild(table7d);
+  container.appendChild(table30d);
+}
+
+function createTrendTable(trends, id) {
+  const table = document.createElement('table');
+  table.className = `trend-table ${id === '3d' ? 'active' : ''}`;
+  table.id = `trendTable_${id}`;
+  table.style.marginTop = '1rem';
+  table.style.width = '100%';
+  table.style.borderCollapse = 'collapse';
+  
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th style="text-align:left; padding:4px; border-bottom:1px solid var(--border-color);">Item</th>
+        <th style="text-align:right; padding:4px; border-bottom:1px solid var(--border-color);">Δ%</th>
+        <th style="text-align:right; padding:4px; border-bottom:1px solid var(--border-color);">Ups</th>
+        <th style="text-align:right; padding:4px; border-bottom:1px solid var(--border-color);">Downs</th>
+        <th style="text-align:left; padding:4px; border-bottom:1px solid var(--border-color);">Type</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+  
+  const tbody = table.querySelector('tbody');
+  for (const entry of trends.slice(0, 15)) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding:4px; border-bottom:1px solid var(--border-color); text-transform:capitalize;">${entry.item.replace('/items/', '').replace(/_/g, ' ')}</td>
+      <td style="padding:4px; text-align:right; border-bottom:1px solid var(--border-color);">${entry.percent.toFixed(2)}</td>
+      <td style="padding:4px; text-align:right; border-bottom:1px solid var(--border-color);">${entry.ups}</td>
+      <td style="padding:4px; text-align:right; border-bottom:1px solid var(--border-color);">${entry.downs}</td>
+      <td style="padding:4px; border-bottom:1px solid var(--border-color);">${entry.trend}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+  
+  return table;
+}
+
+function switchTrendTab(period) {
+  // Update tab styles
+  document.querySelectorAll('.trend-tab').forEach(tab => tab.classList.remove('active'));
+  if (period === '3d') {
+    document.querySelector('#trendTabs button:first-child').classList.add('active');
+  } else if (period === '7d') {
+    document.querySelector('#trendTabs button:nth-child(2)').classList.add('active');
+  } else {
+    document.querySelector('#trendTabs button:last-child').classList.add('active');
+  }
+  
+  // Show/hide tables
+  document.querySelectorAll('.trend-table').forEach(table => table.classList.remove('active'));
+  document.getElementById(`trendTable_${period}`).classList.add('active');
+}
+
 // Loads gzipped SVG sprite, decompresses, and injects into DOM
 async function loadAndInjectSvgSprite(spriteGzUrl, injectedId = "svg-sprite") {
   try {
@@ -242,9 +393,116 @@ async function loadAndInjectSvgSprite(spriteGzUrl, injectedId = "svg-sprite") {
   }
 }
 
-function populateUI(newByItem, newItemConfig) {
+function renderCategoryTabs(itemConfig) {
+  const tabs = Object.keys(itemConfig).filter(
+    k => Array.isArray(itemConfig[k]) && k !== "ItemTokenPrices"
+  );
+  const categoryTabs = document.getElementById('categoryTabs');
+  categoryTabs.innerHTML = '';
+  tabs.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.textContent = cat;
+    btn.className = 'category-tab' + (cat === currentCategory ? ' active' : '');
+    btn.onclick = () => {
+      currentCategory = cat;
+      renderItemsForCategory(cat, itemConfig);
+      document.querySelectorAll('.category-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+    categoryTabs.appendChild(btn);
+  });
+  
+  // Select first category if none selected
+  if (!currentCategory && tabs.length > 0) {
+    currentCategory = tabs[0];
+    renderItemsForCategory(tabs[0], itemConfig);
+    document.querySelector('.category-tab').classList.add('active');
+  }
+}
+
+function renderItemsForCategory(category, itemConfig) {
+  const items = itemConfig[category] || [];
+  itemLinks.innerHTML = '';
+  
+  // Create a proper grid container with fixed columns
+  const grid = document.createElement('div');
+  grid.style.display = 'grid';
+  grid.style.gridTemplateColumns = 'repeat(6, 1fr)'; // 6 columns for better fit in 1/3 width
+  grid.style.gap = '0.5rem';
+  grid.style.padding = '0.5rem';
+  grid.style.maxHeight = '60vh';
+  grid.style.overflowY = 'auto';
+  grid.style.width = '100%';
+  grid.style.boxSizing = 'border-box';
+  
+  // Filter available items
+  const availableItems = items.filter(itm => byItem[itm]);
+  
+  for (const itm of availableItems) {
+    const link = document.createElement('a');
+    link.href = '#';
+    link.dataset.item = itm;
+    link.title = itm.replace('/items/', '').replace(/_/g, ' ');
+    
+    // Style the item slot like in screenshots
+    link.style.display = 'flex';
+    link.style.alignItems = 'center';
+    link.style.justifyContent = 'center';
+    link.style.width = '40px';
+    link.style.height = '40px';
+    link.style.borderRadius = '6px';
+    link.style.border = '1px solid var(--border-color)';
+    link.style.background = 'var(--panel-bg, #2c2c44)';
+    link.style.transition = 'all 0.2s ease';
+    link.style.boxSizing = 'border-box';
+    link.style.position = 'relative';
+    link.style.cursor = 'pointer';
+    
+    // Hover effects
+    link.onmouseover = () => {
+      link.style.background = 'var(--link-bg-hover)';
+      link.style.transform = 'scale(1.05)';
+      link.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+    };
+    link.onmouseout = () => {
+      link.style.background = 'var(--panel-bg, #2c2c44)';
+      link.style.transform = 'scale(1)';
+      link.style.boxShadow = 'none';
+    };
+    
+    // Click handler
+    link.onclick = (e) => {
+      e.preventDefault();
+      selectItem(itm);
+      document.querySelectorAll('#itemLinks a').forEach(a => a.classList.remove('active'));
+      link.classList.add('active');
+    };
+    
+    // Create SVG icon
+    const iconId = itm.replace('/items/', '');
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '28');
+    svg.setAttribute('height', '28');
+    svg.style.filter = 'brightness(1.1)';
+    
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', `#${iconId}`);
+    svg.appendChild(use);
+    link.appendChild(svg);
+    
+    grid.appendChild(link);
+  }
+  
+  itemLinks.appendChild(grid);
+  
+  // Select the first item in this category if available
+  if (availableItems.length > 0) {
+    selectItem(availableItems[0]);
+  }
+}
+
+function populateUI(newByItem, newItemConfig, trends_3d, trends_7d, trends_30d) {
   try {
-    // 1. Clear previous state
     itemLinks.innerHTML = '';
     levelButtons.innerHTML = '';
     chart?.destroy();
@@ -252,50 +510,15 @@ function populateUI(newByItem, newItemConfig) {
     document.getElementById('currentItemName').textContent = '';
     byItem = newByItem;
     itemConfig = newItemConfig;
-
-    const allowedItems = Object.values(itemConfig).filter(v => Array.isArray(v));
-
-    // 3. Rebuild UI
-    const allAvailableItems = allowedItems.flat().filter(itm => byItem[itm]);
-
-    for (const column of allowedItems) {
-      const columnDiv = document.createElement('div');
-      columnDiv.className = 'item-column';
-
-      const availableItemsInColumn = column.filter(itm => byItem[itm]);
-
-      if (availableItemsInColumn.length > 0) {
-        for(const itm of availableItemsInColumn) {
-          const link = document.createElement('a');
-          link.href = '#';
-          link.dataset.item = itm;
-          link.title = itm.replace('/items/', '').replace(/_/g, ' ');
-
-          const iconId = itm.replace('/items/', '');
-          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-          const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-          // Reference the in-DOM sprite symbol
-          use.setAttribute('href', `#${iconId}`);
-          svg.appendChild(use);
-          link.appendChild(svg);
-
-          link.onclick = (e) => {
-            e.preventDefault();
-            selectItem(itm);
-          }
-          columnDiv.appendChild(link);
-        }
-        itemLinks.appendChild(columnDiv);
-      }
+    document.getElementById('trendTableContainer').innerHTML = '';
+    
+    // Render tabs and default category
+    renderCategoryTabs(itemConfig);
+    
+    // Render trend tables if present
+    if ((trends_3d && trends_3d.length) || (trends_7d && trends_7d.length) || (trends_30d && trends_30d.length)) {
+      renderTrendTable(trends_3d, trends_7d, trends_30d);
     }
-
-    // 4. Select first item to render chart
-    if (allAvailableItems.length > 0) {
-      selectItem(allAvailableItems[0]);
-    } else {
-      draw(); // Draw empty state if no items from the file are in our list
-    }
-
   } catch (e) {
     console.error(e);
     alert('Error loading data: ' + e);
@@ -317,7 +540,7 @@ function updateLastDataInfo(rows) {
 
 function parseCompactData(buffer) {
     const text = new TextDecoder().decode(pako.ungzip(buffer));
-    const {items, rows, config} = JSON.parse(text);
+    const {items, rows, config, trends_3d, trends_7d, trends_30d} = JSON.parse(text);
     updateLastDataInfo(rows);
 
     const newByItem = {};
@@ -326,7 +549,7 @@ function parseCompactData(buffer) {
         (newByItem[it] ??= {})[lvl] ??= [];
         newByItem[it][lvl].push({ t: new Date(ts*1000), ask, bid });
     }
-    return {newByItem, config};
+    return {newByItem, config, trends_3d, trends_7d, trends_30d};
 }
 
 async function loadInitialData() {
@@ -336,8 +559,8 @@ async function loadInitialData() {
             throw new Error(`HTTP error! status: ${res.status}`);
         }
         const buffer = await res.arrayBuffer();
-        const {newByItem, config} = parseCompactData(buffer);
-        populateUI(newByItem, config);
+        const {newByItem, config, trends_3d, trends_7d, trends_30d} = parseCompactData(buffer);
+        populateUI(newByItem, config, trends_3d, trends_7d, trends_30d);
     } catch (e) {
         console.log("Could not load initial data. Waiting for local file.", e);
     }
@@ -357,8 +580,8 @@ async function main() {
     const reader = new FileReader();
     reader.onload = (e) => {
         try {
-            const {newByItem, config} = parseCompactData(e.target.result);
-            populateUI(newByItem, config);
+            const {newByItem, config, trends_3d, trends_7d, trends_30d} = parseCompactData(e.target.result);
+            populateUI(newByItem, config, trends_3d, trends_7d, trends_30d);
         } catch(err) {
             console.error("Error processing file", err);
             alert("Error processing file: " + err);
