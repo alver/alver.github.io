@@ -24,7 +24,7 @@
   --active-text: #1c2128;
  }
  body{font:14px/1.4 sans-serif;margin:2rem; background: var(--bg-color); color: var(--text-color); transition: background 0.2s, color 0.2s;}
- #wrap{}
+  /* container */
  h2{margin-top:0; display: flex; justify-content: space-between; align-items: center;}
  .header-controls { display: flex; align-items: center; gap: 1rem; }
  #loadDataButton { padding: 5px 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); cursor: pointer; border-radius: 4px; }
@@ -42,17 +42,19 @@
  .item-column { display: flex; flex-direction: column; gap: 0.5rem; }
  #itemLinks a {
   box-sizing: border-box;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
+  background: var(--panel-bg, #2c2c44);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
  }
- #itemLinks a:hover { background: var(--link-bg-hover); }
- #itemLinks a.active { font-weight: bold; background: var(--active-bg); color: var(--active-text); border-color: var(--active-bg); }
+ #itemLinks a:hover { background: var(--link-bg-hover); transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+ #itemLinks a.active { font-weight: bold; background: var(--active-bg); color: var(--active-text); border-color: var(--active-bg); box-shadow: 0 0 0 2px var(--active-bg) inset; }
  #itemLinks a svg { width: 40px; height: 40px; }
  #chart-container { flex-grow: 1; display: flex; flex-direction: column; width: 66.67%; }
  #currentItemName { text-align: center; margin: 0; padding-bottom: 1rem; height: 1.2em; text-transform: capitalize; }
@@ -62,6 +64,7 @@
  #levelButtons button.active { background: var(--active-bg); color: var(--active-text); border-color: var(--active-bg); }
  #categoryTabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -125,9 +128,9 @@
       </label>
     </div>
   </h2>
-  <div id="categoryTabs" style="width: 100%; margin-bottom: 1rem;"></div>
   <div id="main-content">
     <div style="display: flex; flex-direction: column; width: 33.33%;">
+      <div id="categoryTabs"></div>
       <div id="itemLinks"></div>
     </div>
     <div id="chart-container">
@@ -276,42 +279,42 @@ function selectItem(item) {
 function renderTrendTable(trends_3d, trends_7d, trends_30d) {
   const container = document.getElementById('trendTableContainer');
   container.innerHTML = '';
-  
+
   if ((!trends_3d || !trends_3d.length) && (!trends_7d || !trends_7d.length) && (!trends_30d || !trends_30d.length)) return;
-  
+
   // Create tabs
   const tabsDiv = document.createElement('div');
   tabsDiv.id = 'trendTabs';
-  
+
   const tab3d = document.createElement('button');
   tab3d.textContent = '3 Days';
   tab3d.className = 'trend-tab active';
   tab3d.onclick = () => switchTrendTab('3d');
-  
+
   const tab7d = document.createElement('button');
   tab7d.textContent = '7 Days';
   tab7d.className = 'trend-tab';
   tab7d.onclick = () => switchTrendTab('7d');
-  
+
   const tab30d = document.createElement('button');
   tab30d.textContent = '30 Days';
   tab30d.className = 'trend-tab';
   tab30d.onclick = () => switchTrendTab('30d');
-  
+
   tabsDiv.appendChild(tab3d);
   tabsDiv.appendChild(tab7d);
   tabsDiv.appendChild(tab30d);
-  
+
   // Create tables
   const table3d = createTrendTable(trends_3d || [], '3d');
   const table7d = createTrendTable(trends_7d || [], '7d');
   const table30d = createTrendTable(trends_30d || [], '30d');
-  
+
   // Add heading
   const heading = document.createElement('h4');
   heading.textContent = 'Market Trends';
   heading.style.margin = '2rem 0 0.5rem 0';
-  
+
   container.appendChild(heading);
   container.appendChild(tabsDiv);
   container.appendChild(table3d);
@@ -326,7 +329,7 @@ function createTrendTable(trends, id) {
   table.style.marginTop = '1rem';
   table.style.width = '100%';
   table.style.borderCollapse = 'collapse';
-  
+
   table.innerHTML = `
     <thead>
       <tr>
@@ -339,7 +342,7 @@ function createTrendTable(trends, id) {
     </thead>
     <tbody></tbody>
   `;
-  
+
   const tbody = table.querySelector('tbody');
   for (const entry of trends.slice(0, 15)) {
     const tr = document.createElement('tr');
@@ -352,7 +355,7 @@ function createTrendTable(trends, id) {
     `;
     tbody.appendChild(tr);
   }
-  
+
   return table;
 }
 
@@ -366,7 +369,7 @@ function switchTrendTab(period) {
   } else {
     document.querySelector('#trendTabs button:last-child').classList.add('active');
   }
-  
+
   // Show/hide tables
   document.querySelectorAll('.trend-table').forEach(table => table.classList.remove('active'));
   document.getElementById(`trendTable_${period}`).classList.add('active');
@@ -411,7 +414,7 @@ function renderCategoryTabs(itemConfig) {
     };
     categoryTabs.appendChild(btn);
   });
-  
+
   // Select first category if none selected
   if (!currentCategory && tabs.length > 0) {
     currentCategory = tabs[0];
@@ -423,53 +426,41 @@ function renderCategoryTabs(itemConfig) {
 function renderItemsForCategory(category, itemConfig) {
   const items = itemConfig[category] || [];
   itemLinks.innerHTML = '';
-  
-  // Create a proper grid container with fixed columns
+
+  // Create a grid container with a responsive number of columns based on width
   const grid = document.createElement('div');
   grid.style.display = 'grid';
-  grid.style.gridTemplateColumns = 'repeat(6, 1fr)'; // 6 columns for better fit in 1/3 width
+  // Each cell is 40px wide; the number of columns adapts to available space
+  grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(40px, 40px))';
   grid.style.gap = '0.5rem';
   grid.style.padding = '0.5rem';
   grid.style.maxHeight = '60vh';
   grid.style.overflowY = 'auto';
   grid.style.width = '100%';
   grid.style.boxSizing = 'border-box';
-  
+
   // Filter available items
   const availableItems = items.filter(itm => byItem[itm]);
-  
+
   for (const itm of availableItems) {
     const link = document.createElement('a');
     link.href = '#';
     link.dataset.item = itm;
     link.title = itm.replace('/items/', '').replace(/_/g, ' ');
-    
-    // Style the item slot like in screenshots
+
+    // Style the item slot
     link.style.display = 'flex';
     link.style.alignItems = 'center';
     link.style.justifyContent = 'center';
     link.style.width = '40px';
     link.style.height = '40px';
     link.style.borderRadius = '6px';
-    link.style.border = '1px solid var(--border-color)';
-    link.style.background = 'var(--panel-bg, #2c2c44)';
-    link.style.transition = 'all 0.2s ease';
     link.style.boxSizing = 'border-box';
     link.style.position = 'relative';
     link.style.cursor = 'pointer';
-    
-    // Hover effects
-    link.onmouseover = () => {
-      link.style.background = 'var(--link-bg-hover)';
-      link.style.transform = 'scale(1.05)';
-      link.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
-    };
-    link.onmouseout = () => {
-      link.style.background = 'var(--panel-bg, #2c2c44)';
-      link.style.transform = 'scale(1)';
-      link.style.boxShadow = 'none';
-    };
-    
+
+    // Hover effects handled by CSS
+
     // Click handler
     link.onclick = (e) => {
       e.preventDefault();
@@ -477,24 +468,24 @@ function renderItemsForCategory(category, itemConfig) {
       document.querySelectorAll('#itemLinks a').forEach(a => a.classList.remove('active'));
       link.classList.add('active');
     };
-    
+
     // Create SVG icon
     const iconId = itm.replace('/items/', '');
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', '28');
     svg.setAttribute('height', '28');
     svg.style.filter = 'brightness(1.1)';
-    
+
     const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
     use.setAttribute('href', `#${iconId}`);
     svg.appendChild(use);
     link.appendChild(svg);
-    
+
     grid.appendChild(link);
   }
-  
+
   itemLinks.appendChild(grid);
-  
+
   // Select the first item in this category if available
   if (availableItems.length > 0) {
     selectItem(availableItems[0]);
@@ -511,10 +502,10 @@ function populateUI(newByItem, newItemConfig, trends_3d, trends_7d, trends_30d) 
     byItem = newByItem;
     itemConfig = newItemConfig;
     document.getElementById('trendTableContainer').innerHTML = '';
-    
+
     // Render tabs and default category
     renderCategoryTabs(itemConfig);
-    
+
     // Render trend tables if present
     if ((trends_3d && trends_3d.length) || (trends_7d && trends_7d.length) || (trends_30d && trends_30d.length)) {
       renderTrendTable(trends_3d, trends_7d, trends_30d);
