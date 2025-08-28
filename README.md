@@ -12,6 +12,8 @@ This is a visual website combined with a set of Python scripts designed to autom
 
 **Live Site:** The repository is automatically deployed via GitHub Pages, with `index.html` serving as the main entry point.
 
+The "dynamic" part implemented in two archive - the icons `items_sprite_filtered.svg.gz` and marketing data `market.compact.json.gz`. Webpage downloading this two files and use then to show all the information. Below you can find instructions how to create this two files.
+
 ## Key Features
 
 - 📊 **Interactive Market Charts** - Visualize price trends using Chart.js
@@ -48,7 +50,7 @@ Don't touch the `ItemTokenPrices` section in the end of `config.json` - this is 
 
 ### 2. Prepare Icons file
 
-After updating your item configuration, create an "filtered" SVG sprite file:
+After updating your item configuration, create an "filtered" SVG sprite file, `items_sprite_filtered.svg.gz`. First, filter the items from full SVG file to your own:
 
 ```bash
 python filter_svg_icons.py
@@ -59,7 +61,7 @@ This script:
 - Filters the original SVG spritesheet to include only needed icons
 - Outputs `../items_sprite_filtered.svg`
 
-To save bandwidth, manually compress the filtered SVG:
+Then (to save bandwidth), manually compress the filtered SVG:
 
 **Windows:**
 ```bash
@@ -74,15 +76,15 @@ gzip -c items_sprite_filtered.svg > items_sprite_filtered.svg.gz
 
 ### 3. Set Up Automated Market Data Collection
 
-The `market.py` script handles automatic market data updates:
+The `market.py` script handles automatic market data updates and generate the `market.compact.json.gz` file with latest information, with automatically update it in the github.
 
-**What it does:**
+**What it does in more details:**
 - Fetches the latest `marketplace.json` from the game servers
 - Compares with the last saved version to avoid redundant updates
 - Filters data to include only items from your `config.json`
 - Generates a compact JSON file containing market data for the last 30 days (configurable)
 - Performs trend analysis for 3, 7, and 30-day periods (very experimental, very vibecoded)
-- Compresses the data using gzip
+- Compresses the data using gzip (`market.compact.json.gz`)
 - Automatically commits and pushes updates to GitHub
 
 **Manual execution:**
