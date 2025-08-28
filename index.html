@@ -1,0 +1,613 @@
+<!-- index.html -->
+<!doctype html><meta charset="utf-8">
+<title>Market viewer</title>
+<script src="chart.js"></script>
+<script src="pako.min.js"></script>
+<script src="chartjs-adapter-date-fns.js"></script>
+<style>
+ :root {
+  --bg-color: #ffffff;
+  --text-color: #222222;
+  --border-color: #dddddd;
+  --link-color: #007bff;
+  --link-bg-hover: #f0f0f0;
+  --active-bg: #007bff;
+  --active-text: #ffffff;
+ }
+ [data-theme="dark"] {
+  --bg-color: #22272e;
+  --text-color: #cdd9e5;
+  --border-color: #444c56;
+  --link-color: #58a6ff;
+  --link-bg-hover: #2d333b;
+  --active-bg: #58a6ff;
+  --active-text: #1c2128;
+ }
+ body{font:14px/1.4 sans-serif;margin:2rem; background: var(--bg-color); color: var(--text-color); transition: background 0.2s, color 0.2s;}
+  /* container */
+ h2{margin-top:0; display: flex; justify-content: space-between; align-items: center;}
+ .header-controls { display: flex; align-items: center; gap: 1rem; }
+ #loadDataButton { padding: 5px 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); cursor: pointer; border-radius: 4px; }
+ .theme-switcher { display: inline-flex; align-items: center; cursor: pointer; }
+ .theme-switcher input { display: none; }
+ .theme-switcher .slider { position: relative; display: block; width: 40px; height: 20px; background-color: #ccc; border-radius: 20px; transition: background-color 0.2s; }
+ .theme-switcher .slider::before { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background-color: white; border-radius: 50%; transition: transform 0.2s; }
+ .theme-switcher input:checked + .slider { background-color: var(--active-bg); }
+ .theme-switcher input:checked + .slider::before { transform: translateX(20px); }
+
+ .theme-control { display: flex; align-items: center; gap: 0.5rem; }
+
+ #main-content { display: flex; gap: 2rem; align-items: flex-start; }
+ #itemLinks { display: flex; flex-direction: row; gap: 1rem; flex-shrink: 0; }
+ .item-column { display: flex; flex-direction: column; gap: 0.5rem; }
+ #itemLinks a {
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--panel-bg, #2c2c44);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+ }
+ #itemLinks a:hover { background: var(--link-bg-hover); transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+ #itemLinks a.active { font-weight: bold; background: var(--active-bg); color: var(--active-text); border-color: var(--active-bg); box-shadow: 0 0 0 2px var(--active-bg) inset; }
+ #itemLinks a svg { width: 40px; height: 40px; }
+ #chart-container { flex-grow: 1; display: flex; flex-direction: column; width: 66.67%; }
+ #currentItemName { text-align: center; margin: 0; padding-bottom: 1rem; height: 1.2em; text-transform: capitalize; }
+ #canvas-wrapper { position: relative; height: 60vh; flex-grow: 1; }
+ #levelButtons { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+ #levelButtons button { padding: 5px 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); cursor: pointer; border-radius: 4px; }
+ #levelButtons button.active { background: var(--active-bg); color: var(--active-text); border-color: var(--active-bg); }
+ #categoryTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.category-tab {
+  padding: 0.5rem 1.2rem;
+  border: none;
+  background: var(--bg-color);
+  color: var(--text-color);
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.category-tab.active {
+  background: var(--active-bg);
+  color: var(--active-text);
+  border-bottom: 2px solid var(--active-bg);
+}
+ #trendTabs {
+   display: flex;
+   gap: 0.5rem;
+   margin-bottom: 1rem;
+ }
+ .trend-tab {
+   padding: 0.5rem 1rem;
+   border: 1px solid var(--border-color);
+   background: var(--bg-color);
+   color: var(--text-color);
+   border-radius: 4px;
+   cursor: pointer;
+   font-weight: 500;
+   transition: background 0.2s, color 0.2s, border-color 0.2s;
+ }
+ .trend-tab.active {
+   background: var(--active-bg);
+   color: var(--active-text);
+   border-color: var(--active-bg);
+ }
+ .trend-table {
+   display: none;
+ }
+ .trend-table.active {
+   display: block;
+ }
+</style>
+
+<div id="wrap">
+  <h2>
+    <div class="header-controls">
+      <span>Market Viewer</span>
+      <input type="file" id="dataFile" accept=".json.gz" style="display: none;">
+      <button id="loadDataButton">Load Local Data</button>
+      <span id="lastDataInfo" style="margin-left:1em;font-size:0.95em;color:var(--text-color)"></span>
+    </div>
+    <div class="theme-control">
+      <span>Theme</span>
+      <label class="theme-switcher">
+        <input type="checkbox" id="themeToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </h2>
+  <div id="main-content">
+    <div style="display: flex; flex-direction: column; width: 33.33%;">
+      <div id="categoryTabs"></div>
+      <div id="itemLinks"></div>
+    </div>
+    <div id="chart-container">
+      <h3 id="currentItemName"></h3>
+      <div id="canvas-wrapper">
+        <canvas id="chart"></canvas>
+      </div>
+      <div id="levelButtons"></div>
+    </div>
+  </div>
+  <div id="trendTableContainer" style="width: 100%; margin-top: 2rem;"></div>
+</div>
+
+<script>
+function parseCSV(text){
+  const [hdrLine, ...lines] = text.trim().split(/\r?\n/);
+  const keys = hdrLine.split(",");
+  return lines.filter(Boolean).map(l => {
+    const vals = l.split(",");
+    return Object.fromEntries(vals.map((v,i)=>[keys[i], v]));
+  });
+}
+
+// Global state
+let byItem = {};
+let chart;
+let currentItem;
+let currentLvl;
+let itemConfig;
+let currentCategory = null;
+
+const itemLinks = document.getElementById('itemLinks');
+const levelButtons = document.getElementById('levelButtons');
+const chartCanvas = document.getElementById('chart');
+
+function updateItemName() {
+  const itemName = currentItem ? currentItem.replace('/items/', '').replace(/_/g, ' ') : '';
+  const currentItemNameEl = document.getElementById('currentItemName');
+  let nameContent = itemName;
+
+  if (currentItem && itemConfig && itemConfig.ItemTokenPrices && itemConfig.ItemTokenPrices[currentItem]) {
+    const tokenPrice = itemConfig.ItemTokenPrices[currentItem];
+    if (currentLvl && byItem[currentItem] && byItem[currentItem][currentLvl]) {
+        const series = byItem[currentItem][currentLvl];
+        if (series.length > 0) {
+            const sortedSeries = [...series].sort((a,b)=>a.t-b.t);
+            const lastBid = sortedSeries[sortedSeries.length - 1].bid;
+            if (lastBid && tokenPrice > 0) {
+                const moneyPerToken = (lastBid / tokenPrice).toFixed(2);
+                nameContent += ` (${tokenPrice} - ${moneyPerToken})`;
+            } else {
+                 nameContent += ` (${tokenPrice} tokens)`;
+            }
+        } else {
+            nameContent += ` (${tokenPrice} tokens)`;
+        }
+    } else {
+        nameContent += ` (${tokenPrice} tokens)`;
+    }
+  }
+  currentItemNameEl.textContent = nameContent;
+}
+
+function draw(){
+  if (!currentItem || !currentLvl || !byItem[currentItem] || !byItem[currentItem][currentLvl]) {
+    chart?.destroy();
+    chart = null;
+    return;
+  }
+  const series = byItem[currentItem][currentLvl];
+  series.sort((a,b)=>a.t-b.t);
+  const askData = series.map(p => ({ x: p.t, y: p.ask }));
+  const bidData = series.map(p => ({ x: p.t, y: p.bid }));
+  const cfg = {
+    type:'line',
+    data:{
+      datasets:[
+        {label:'Ask', data:askData, borderWidth:2, tension: 0.1, stepped: 'before'},
+        {label:'Bid', data:bidData, borderWidth:2, tension: 0.1, stepped: 'before'}
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio: false,
+      scales:{
+        x:{
+          type: 'time',
+          time: {
+            unit: 'day',
+            displayFormats: {
+              day: 'MMM dd'
+            }
+          },
+          ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-color') },
+          grid: { color: getComputedStyle(document.body).getPropertyValue('--border-color') }
+        },
+        y:{
+          position: 'right',
+          beginAtZero:false,
+          ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-color') },
+          grid: { color: getComputedStyle(document.body).getPropertyValue('--border-color') }
+        }
+      },
+      plugins: {
+        legend: {
+          labels: { color: getComputedStyle(document.body).getPropertyValue('--text-color') }
+        }
+      }
+    }
+  };
+  chart?.destroy();
+  chart = new Chart(chartCanvas, cfg);
+}
+
+function selectLevel(level) {
+  currentLvl = level;
+  document.querySelectorAll('#levelButtons button').forEach(b => {
+    b.classList.toggle('active', b.dataset.level === level);
+  });
+  updateItemName();
+  draw();
+}
+
+function selectItem(item) {
+  currentItem = item;
+  document.querySelectorAll('#itemLinks a').forEach(a => {
+    a.classList.toggle('active', a.dataset.item === item);
+  });
+
+  levelButtons.innerHTML = '';
+  const levels = Object.keys(byItem[item] || {}).sort((a,b)=>a-b);
+
+  if (levels.length > 1) {
+    for (const lvl of levels) {
+      const btn = document.createElement('button');
+      btn.textContent = `+${lvl}`;
+      btn.dataset.level = lvl;
+      btn.onclick = () => selectLevel(lvl);
+      levelButtons.appendChild(btn);
+    }
+  }
+
+  selectLevel(levels[0] || null);
+}
+
+function renderTrendTable(trends_3d, trends_7d, trends_30d) {
+  const container = document.getElementById('trendTableContainer');
+  container.innerHTML = '';
+
+  if ((!trends_3d || !trends_3d.length) && (!trends_7d || !trends_7d.length) && (!trends_30d || !trends_30d.length)) return;
+
+  // Create tabs
+  const tabsDiv = document.createElement('div');
+  tabsDiv.id = 'trendTabs';
+
+  const tab3d = document.createElement('button');
+  tab3d.textContent = '3 Days';
+  tab3d.className = 'trend-tab active';
+  tab3d.onclick = () => switchTrendTab('3d');
+
+  const tab7d = document.createElement('button');
+  tab7d.textContent = '7 Days';
+  tab7d.className = 'trend-tab';
+  tab7d.onclick = () => switchTrendTab('7d');
+
+  const tab30d = document.createElement('button');
+  tab30d.textContent = '30 Days';
+  tab30d.className = 'trend-tab';
+  tab30d.onclick = () => switchTrendTab('30d');
+
+  tabsDiv.appendChild(tab3d);
+  tabsDiv.appendChild(tab7d);
+  tabsDiv.appendChild(tab30d);
+
+  // Create tables
+  const table3d = createTrendTable(trends_3d || [], '3d');
+  const table7d = createTrendTable(trends_7d || [], '7d');
+  const table30d = createTrendTable(trends_30d || [], '30d');
+
+  // Add heading
+  const heading = document.createElement('h4');
+  heading.textContent = 'Market Trends';
+  heading.style.margin = '2rem 0 0.5rem 0';
+
+  container.appendChild(heading);
+  container.appendChild(tabsDiv);
+  container.appendChild(table3d);
+  container.appendChild(table7d);
+  container.appendChild(table30d);
+}
+
+function createTrendTable(trends, id) {
+  const table = document.createElement('table');
+  table.className = `trend-table ${id === '3d' ? 'active' : ''}`;
+  table.id = `trendTable_${id}`;
+  table.style.marginTop = '1rem';
+  table.style.width = '100%';
+  table.style.borderCollapse = 'collapse';
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th style="text-align:left; padding:4px; border-bottom:1px solid var(--border-color);">Item</th>
+        <th style="text-align:right; padding:4px; border-bottom:1px solid var(--border-color);">Δ%</th>
+        <th style="text-align:right; padding:4px; border-bottom:1px solid var(--border-color);">Ups</th>
+        <th style="text-align:right; padding:4px; border-bottom:1px solid var(--border-color);">Downs</th>
+        <th style="text-align:left; padding:4px; border-bottom:1px solid var(--border-color);">Type</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+
+  const tbody = table.querySelector('tbody');
+  for (const entry of trends.slice(0, 15)) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding:4px; border-bottom:1px solid var(--border-color); text-transform:capitalize;">${entry.item.replace('/items/', '').replace(/_/g, ' ')}</td>
+      <td style="padding:4px; text-align:right; border-bottom:1px solid var(--border-color);">${entry.percent.toFixed(2)}</td>
+      <td style="padding:4px; text-align:right; border-bottom:1px solid var(--border-color);">${entry.ups}</td>
+      <td style="padding:4px; text-align:right; border-bottom:1px solid var(--border-color);">${entry.downs}</td>
+      <td style="padding:4px; border-bottom:1px solid var(--border-color);">${entry.trend}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  return table;
+}
+
+function switchTrendTab(period) {
+  // Update tab styles
+  document.querySelectorAll('.trend-tab').forEach(tab => tab.classList.remove('active'));
+  if (period === '3d') {
+    document.querySelector('#trendTabs button:first-child').classList.add('active');
+  } else if (period === '7d') {
+    document.querySelector('#trendTabs button:nth-child(2)').classList.add('active');
+  } else {
+    document.querySelector('#trendTabs button:last-child').classList.add('active');
+  }
+
+  // Show/hide tables
+  document.querySelectorAll('.trend-table').forEach(table => table.classList.remove('active'));
+  document.getElementById(`trendTable_${period}`).classList.add('active');
+}
+
+// Loads gzipped SVG sprite, decompresses, and injects into DOM
+async function loadAndInjectSvgSprite(spriteGzUrl, injectedId = "svg-sprite") {
+  try {
+    const res = await fetch(spriteGzUrl);
+    if (!res.ok) throw new Error(`Failed to fetch sprite: ${res.status}`);
+    const gzBuffer = await res.arrayBuffer();
+    const svgText = new TextDecoder().decode(pako.ungzip(gzBuffer));
+    // Remove any previous injected sprite
+    document.getElementById(injectedId)?.remove();
+    // Create a container and inject the SVG
+    const div = document.createElement("div");
+    div.id = injectedId;
+    div.style.display = "none";
+    div.innerHTML = svgText;
+    document.body.prepend(div);
+  } catch (e) {
+    console.error("Failed to load SVG sprite:", e);
+    alert("Could not load SVG icons.");
+  }
+}
+
+function renderCategoryTabs(itemConfig) {
+  const tabs = Object.keys(itemConfig).filter(
+    k => Array.isArray(itemConfig[k]) && k !== "ItemTokenPrices"
+  );
+  const categoryTabs = document.getElementById('categoryTabs');
+  categoryTabs.innerHTML = '';
+  tabs.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.textContent = cat;
+    btn.className = 'category-tab' + (cat === currentCategory ? ' active' : '');
+    btn.onclick = () => {
+      currentCategory = cat;
+      renderItemsForCategory(cat, itemConfig);
+      document.querySelectorAll('.category-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+    categoryTabs.appendChild(btn);
+  });
+
+  // Select first category if none selected
+  if (!currentCategory && tabs.length > 0) {
+    currentCategory = tabs[0];
+    renderItemsForCategory(tabs[0], itemConfig);
+    document.querySelector('.category-tab').classList.add('active');
+  }
+}
+
+function renderItemsForCategory(category, itemConfig) {
+  const items = itemConfig[category] || [];
+  itemLinks.innerHTML = '';
+
+  // Create a grid container with a responsive number of columns based on width
+  const grid = document.createElement('div');
+  grid.style.display = 'grid';
+  // Each cell is 40px wide; the number of columns adapts to available space
+  grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(40px, 40px))';
+  grid.style.gap = '0.5rem';
+  grid.style.padding = '0.5rem';
+  grid.style.maxHeight = '60vh';
+  grid.style.overflowY = 'auto';
+  grid.style.width = '100%';
+  grid.style.boxSizing = 'border-box';
+
+  // Filter available items
+  const availableItems = items.filter(itm => byItem[itm]);
+
+  for (const itm of availableItems) {
+    const link = document.createElement('a');
+    link.href = '#';
+    link.dataset.item = itm;
+    link.title = itm.replace('/items/', '').replace(/_/g, ' ');
+
+    // Style the item slot
+    link.style.display = 'flex';
+    link.style.alignItems = 'center';
+    link.style.justifyContent = 'center';
+    link.style.width = '40px';
+    link.style.height = '40px';
+    link.style.borderRadius = '6px';
+    link.style.boxSizing = 'border-box';
+    link.style.position = 'relative';
+    link.style.cursor = 'pointer';
+
+    // Hover effects handled by CSS
+
+    // Click handler
+    link.onclick = (e) => {
+      e.preventDefault();
+      selectItem(itm);
+      document.querySelectorAll('#itemLinks a').forEach(a => a.classList.remove('active'));
+      link.classList.add('active');
+    };
+
+    // Create SVG icon
+    const iconId = itm.replace('/items/', '');
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '28');
+    svg.setAttribute('height', '28');
+    svg.style.filter = 'brightness(1.1)';
+
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', `#${iconId}`);
+    svg.appendChild(use);
+    link.appendChild(svg);
+
+    grid.appendChild(link);
+  }
+
+  itemLinks.appendChild(grid);
+
+  // Select the first item in this category if available
+  if (availableItems.length > 0) {
+    selectItem(availableItems[0]);
+  }
+}
+
+function populateUI(newByItem, newItemConfig, trends_3d, trends_7d, trends_30d) {
+  try {
+    itemLinks.innerHTML = '';
+    levelButtons.innerHTML = '';
+    chart?.destroy();
+    chart = null;
+    document.getElementById('currentItemName').textContent = '';
+    byItem = newByItem;
+    itemConfig = newItemConfig;
+    document.getElementById('trendTableContainer').innerHTML = '';
+
+    // Render tabs and default category
+    renderCategoryTabs(itemConfig);
+
+    // Render trend tables if present
+    if ((trends_3d && trends_3d.length) || (trends_7d && trends_7d.length) || (trends_30d && trends_30d.length)) {
+      renderTrendTable(trends_3d, trends_7d, trends_30d);
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Error loading data: ' + e);
+  }
+}
+
+function updateLastDataInfo(rows) {
+  if (!rows || !rows.length) {
+    document.getElementById('lastDataInfo').textContent = '';
+    return;
+  }
+  // Find the latest timestamp
+  const latestTs = Math.max(...rows.map(r => r[0]));
+  const dt = new Date(latestTs * 1000);
+  const dateStr = dt.toLocaleDateString();
+  const timeStr = dt.toLocaleTimeString();
+  document.getElementById('lastDataInfo').textContent = `Last data: ${dateStr} - ${timeStr}`;
+}
+
+function parseCompactData(buffer) {
+    const text = new TextDecoder().decode(pako.ungzip(buffer));
+    const {items, rows, config, trends_3d, trends_7d, trends_30d} = JSON.parse(text);
+    updateLastDataInfo(rows);
+
+    const newByItem = {};
+    for (const [ts, idx, lvl, ask, bid] of rows){
+        const it = items[idx];
+        (newByItem[it] ??= {})[lvl] ??= [];
+        newByItem[it][lvl].push({ t: new Date(ts*1000), ask, bid });
+    }
+    return {newByItem, config, trends_3d, trends_7d, trends_30d};
+}
+
+async function loadInitialData() {
+    try {
+        const res = await fetch('market.compact.json.gz');
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const buffer = await res.arrayBuffer();
+        const {newByItem, config, trends_3d, trends_7d, trends_30d} = parseCompactData(buffer);
+        populateUI(newByItem, config, trends_3d, trends_7d, trends_30d);
+    } catch (e) {
+        console.log("Could not load initial data. Waiting for local file.", e);
+    }
+}
+
+async function main() {
+  // File loading logic
+  const loadDataButton = document.getElementById('loadDataButton');
+  const dataFileInput = document.getElementById('dataFile');
+
+  loadDataButton.addEventListener('click', () => dataFileInput.click());
+
+  dataFileInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const {newByItem, config, trends_3d, trends_7d, trends_30d} = parseCompactData(e.target.result);
+            populateUI(newByItem, config, trends_3d, trends_7d, trends_30d);
+        } catch(err) {
+            console.error("Error processing file", err);
+            alert("Error processing file: " + err);
+        }
+    };
+    reader.onerror = (e) => {
+        console.error("File could not be read!", e);
+        alert("Error reading file.");
+    };
+    reader.readAsArrayBuffer(file);
+  });
+
+  // Theme switcher logic
+  const themeToggle = document.getElementById('themeToggle');
+  const body = document.body;
+
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  body.dataset.theme = savedTheme;
+  themeToggle.checked = savedTheme === 'dark';
+
+  themeToggle.addEventListener('change', () => {
+    if (themeToggle.checked) {
+      body.dataset.theme = 'dark';
+      localStorage.setItem('theme', 'dark');
+    } else {
+      body.dataset.theme = 'light';
+      localStorage.setItem('theme', 'light');
+    }
+    // Redraw chart to update colors
+    draw();
+  });
+
+  // Load and inject the SVG sprite before loading data/UI
+  await loadAndInjectSvgSprite('items_sprite_filtered.svg.gz');
+  loadInitialData();
+}
+main();
+</script>
