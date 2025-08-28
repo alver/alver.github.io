@@ -4,6 +4,8 @@ A lightweight, static website for visualizing market data and tracking item pric
 
 Mostly everything in this repository is "vibe-coded", so keep in mind before critisize the code or so - project was done in several hours just for fun and learning purpose.
 
+Project running on Windows, but must be ok to use on any other OSs, just fix the git usage in `market.py` script.
+
 ## Overview
 
 This is a visual website combined with a set of Python scripts designed to automatically update market data. Since the website is hosted on GitHub Pages (free tier with traffic limitations), the system is specifically optimized to minimize bandwidth usage by tracking only the items you actually need.
