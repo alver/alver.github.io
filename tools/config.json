@@ -123,17 +123,16 @@
 "/items/elemental_affinity",
 "/items/frenzy",
 "/items/spike_shell",
-"/items/arcane_reflection",
+"/items/retribution",
 "/items/vampirism",
 "/items/revive",
 "/items/insanity",
 "/items/invincible",
-"/items/fierce_aura",
-"/items/aqua_aura",
-"/items/sylvan_aura",
-"/items/flame_aura",
 "/items/speed_aura",
-"/items/critical_aura"
+"/items/guardian_aura",
+"/items/fierce_aura",
+"/items/critical_aura",
+"/items/mystic_aura"
   ],
   "Keys": [
 "/items/blue_key_fragment",
