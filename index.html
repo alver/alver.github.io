@@ -174,6 +174,7 @@ let currentLvl;
 let itemConfig;
 let currentCategory = null;
 let currentTimeRangeDays = 30;
+let showPoints = true;
 
 const itemLinks = document.getElementById('itemLinks');
 const levelButtons = document.getElementById('levelButtons');
@@ -254,7 +255,10 @@ function draw(){
         legend: {
           labels: { color: getComputedStyle(document.body).getPropertyValue('--text-color') }
         }
-      }
+      },
+      elements: {
+        point: { radius: showPoints ? 3 : 0, hoverRadius: showPoints ? 4 : 0, hitRadius: showPoints ? 4 : 0 }
+      }      
     }
   };
   chart?.destroy();
@@ -310,6 +314,29 @@ function renderTimeRangeButtons() {
     };
     timeRangeButtons.appendChild(btn);
   }
+
+  // Inline points toggle
+  const ptsWrap = document.createElement('label');
+  ptsWrap.style.display = 'inline-flex';
+  ptsWrap.style.alignItems = 'center';
+  ptsWrap.style.gap = '0.35rem';
+  ptsWrap.style.marginLeft = '0.5rem';
+
+  const ptsInput = document.createElement('input');
+  ptsInput.type = 'checkbox';
+  ptsInput.id = 'pointsToggle';
+  ptsInput.checked = showPoints;
+  ptsInput.addEventListener('change', () => {
+    showPoints = ptsInput.checked;
+    draw();
+  });
+
+  const ptsText = document.createElement('span');
+  ptsText.textContent = 'Show points';
+
+  ptsWrap.appendChild(ptsInput);
+  ptsWrap.appendChild(ptsText);
+  timeRangeButtons.appendChild(ptsWrap);
 }
 
 function renderTrendTable(trends_3d, trends_7d, trends_30d) {
