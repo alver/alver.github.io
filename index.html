@@ -65,6 +65,9 @@
  #levelButtons { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
  #levelButtons button { padding: 5px 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); cursor: pointer; border-radius: 4px; }
  #levelButtons button.active { background: var(--active-bg); color: var(--active-text); border-color: var(--active-bg); }
+ #timeRangeButtons { margin-top: 0.75rem; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+ #timeRangeButtons button { padding: 5px 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); cursor: pointer; border-radius: 4px; }
+ #timeRangeButtons button.active { background: var(--active-bg); color: var(--active-text); border-color: var(--active-bg); }
  #categoryTabs {
   display: flex;
   flex-wrap: wrap;
@@ -146,6 +149,7 @@
       <div id="canvas-wrapper">
         <canvas id="chart"></canvas>
       </div>
+      <div id="timeRangeButtons"></div>
       <div id="levelButtons"></div>
     </div>
   </div>
@@ -169,10 +173,12 @@ let currentItem;
 let currentLvl;
 let itemConfig;
 let currentCategory = null;
+let currentTimeRangeDays = 30;
 
 const itemLinks = document.getElementById('itemLinks');
 const levelButtons = document.getElementById('levelButtons');
 const chartCanvas = document.getElementById('chart');
+const timeRangeButtons = document.getElementById('timeRangeButtons');
 
 function updateItemName() {
   const itemName = currentItem ? currentItem.replace('/items/', '').replace(/_/g, ' ') : '';
@@ -210,8 +216,10 @@ function draw(){
   }
   const series = byItem[currentItem][currentLvl];
   series.sort((a,b)=>a.t-b.t);
-  const askData = series.map(p => ({ x: p.t, y: p.ask }));
-  const bidData = series.map(p => ({ x: p.t, y: p.bid }));
+  const cutoff = new Date(Date.now() - currentTimeRangeDays * 24 * 60 * 60 * 1000);
+  const filtered = series.filter(p => p.t >= cutoff);
+  const askData = filtered.map(p => ({ x: p.t, y: p.ask }));
+  const bidData = filtered.map(p => ({ x: p.t, y: p.bid }));
   const cfg = {
     type:'line',
     data:{
@@ -282,6 +290,26 @@ function selectItem(item) {
   }
 
   selectLevel(levels[0] || null);
+}
+
+function renderTimeRangeButtons() {
+  if (!timeRangeButtons) return;
+  timeRangeButtons.innerHTML = '';
+  const ranges = [30, 15, 7, 3];
+  for (const days of ranges) {
+    const btn = document.createElement('button');
+    btn.textContent = `${days} Days`;
+    btn.dataset.days = String(days);
+    if (days === currentTimeRangeDays) btn.classList.add('active');
+    btn.onclick = () => {
+      currentTimeRangeDays = days;
+      document.querySelectorAll('#timeRangeButtons button').forEach(b => {
+        b.classList.toggle('active', Number(b.dataset.days) === currentTimeRangeDays);
+      });
+      draw();
+    };
+    timeRangeButtons.appendChild(btn);
+  }
 }
 
 function renderTrendTable(trends_3d, trends_7d, trends_30d) {
@@ -615,6 +643,7 @@ async function main() {
 
   // Load and inject the SVG sprite before loading data/UI
   await loadAndInjectSvgSprite('items_sprite_filtered.svg.gz');
+  renderTimeRangeButtons();
   loadInitialData();
 }
 main();
