@@ -163,7 +163,10 @@
     "/items/royal_water_robe_bottoms",
     "/items/knights_aegis",
     "/items/kraken_chaps",
-    "/items/marksman_bracers"
+    "/items/marksman_bracers",
+    "/items/philosophers_necklace",
+    "/items/philosophers_earrings",
+    "/items/philosophers_ring"
   ],
   "Accessories":
   [
