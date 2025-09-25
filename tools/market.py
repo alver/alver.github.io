@@ -156,7 +156,11 @@ def prepare_new_data():
     one_month_ago = now - (30 * 24 * 60 * 60)  # 30 days in seconds
 
     items, rows, index = [], [], {}
-    last_vals = {}  # (idx, level) -> (a, b)
+    # (idx, level) -> (a, b, ts_last_added)
+    last_vals = {}
+    # Track latest snapshot inside the window to ensure we always append it
+    latest_ts = None
+    latest_market_data = None
 
     for path in sorted(glob.glob("downloads/*.json")):
         with open(path, encoding="utf-8") as f:
@@ -168,6 +172,9 @@ def prepare_new_data():
             continue
 
         data = file_json["marketData"]
+        # Update latest snapshot within the considered period
+        latest_ts = ts
+        latest_market_data = data
 
         for item, lvls in data.items():
             if item not in allowed_items:
@@ -189,7 +196,29 @@ def prepare_new_data():
                 # Append only if (a,b) changed from the last seen values for this item+level
                 if prev is None or prev[0] != a or prev[1] != b:
                     rows.append([ts, idx, level, a, b])
-                    last_vals[key] = (a, b)
+                    last_vals[key] = (a, b, ts)
+
+    # Always ensure the very latest snapshot is present, even if values didn't change
+    if latest_ts is not None and latest_market_data is not None:
+        for item, lvls in latest_market_data.items():
+            if item not in allowed_items:
+                continue
+            if item not in index:
+                index[item] = len(items)
+                items.append(item)
+            idx = index[item]
+            for lvl, p in lvls.items():
+                a, b = p["a"], p["b"]
+                if a == b == -1:
+                    continue
+                level = int(lvl)
+                key = (idx, level)
+                prev = last_vals.get(key)
+                # If we never added this key before, or its last timestamp is older than latest_ts,
+                # append the snapshot row at latest_ts to extend the graph.
+                if prev is None or prev[2] != latest_ts:
+                    rows.append([latest_ts, idx, level, a, b])
+                    last_vals[key] = (a, b, latest_ts)
 
     # Trend analysis (last 3 days, 7 days, and 30 days)
     trends_3d = analyze_trends("downloads", items, days=3)
