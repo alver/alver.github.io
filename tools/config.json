@@ -79,7 +79,8 @@
     "/items/maelstrom_plating ",
     "/items/kraken_leather",
     "/items/kraken_fang",
-    "/items/pirate_refinement_shard"
+    "/items/pirate_refinement_shard",
+    "/items/pirate_essence"
   ],
   "Consumables": [
     "/items/spaceberry_donut",
