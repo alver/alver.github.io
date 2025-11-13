@@ -174,6 +174,12 @@
   ],
   "Equipment":
   [
+    "/items/griffin_tunic",
+    "/items/griffin_chaps",
+    "/items/manticore_shield",
+    "/items/jackalope_staff",
+    "/items/dodocamel_gauntlets",
+    "/items/griffin_bulwark",
     "/items/acrobatic_hood",
     "/items/sundering_crossbow",
     "/items/cursed_bow",
@@ -183,7 +189,6 @@
     "/items/knights_aegis",
     "/items/kraken_chaps",
     "/items/marksman_bracers",
-    "/items/jackalope_staff",
     "/items/philosophers_necklace",
     "/items/philosophers_earrings",
     "/items/philosophers_ring"
