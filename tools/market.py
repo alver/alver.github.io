@@ -186,7 +186,7 @@ def prepare_new_data():
             idx = index[item]
 
             for lvl, p in lvls.items():
-                a, b = p["a"], p["b"]
+                a, b = p.get("a", -1), p.get("b", -1)
                 if a == b == -1:           # обе цены -1 → нет сделки
                     continue
                 level = int(lvl)
@@ -208,7 +208,7 @@ def prepare_new_data():
                 items.append(item)
             idx = index[item]
             for lvl, p in lvls.items():
-                a, b = p["a"], p["b"]
+                a, b = p.get("a", -1), p.get("b", -1)
                 if a == b == -1:
                     continue
                 level = int(lvl)
@@ -275,7 +275,12 @@ def fetch_and_save():
             with open(latest_filepath, 'r', encoding='utf-8') as f:
                 latest_data = json.load(f)
 
-            if data == latest_data:
+            def _ab_only(d):
+                return {item: {lvl: {"a": p.get("a"), "b": p.get("b")}
+                               for lvl, p in levels.items()}
+                        for item, levels in d.get("marketData", {}).items()}
+
+            if _ab_only(data) == _ab_only(latest_data):
                 print("Data is the same as the latest version, not saving.")
                 return
 
