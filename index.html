@@ -1,6 +1,6 @@
 <!-- index.html -->
 <!doctype html><meta charset="utf-8">
-<title>Market viewer</title>
+<title>MilkyWayIdle Market Viewer</title>
 <script src="chart.js"></script>
 <script src="pako.min.js"></script>
 <script src="chartjs-adapter-date-fns.js"></script>
@@ -23,12 +23,11 @@
   --active-bg: #58a6ff;
   --active-text: #1c2128;
  }
- body{font:14px/1.4 sans-serif;margin:2rem; background: var(--bg-color); color: var(--text-color); transition: background 0.2s, color 0.2s;}
+ body{font:14px/1.4 sans-serif;margin:8px; background: var(--bg-color); color: var(--text-color); transition: background 0.2s, color 0.2s;}
   /* container */
  h2{margin-top:0; display: flex; justify-content: space-between; align-items: center;}
  .header-controls { display: flex; align-items: center; gap: 1rem; }
- #loadDataButton { padding: 5px 10px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); cursor: pointer; border-radius: 4px; }
- .theme-switcher { display: inline-flex; align-items: center; cursor: pointer; }
+.theme-switcher { display: inline-flex; align-items: center; cursor: pointer; }
  .theme-switcher input { display: none; }
  .theme-switcher .slider { position: relative; display: block; width: 40px; height: 20px; background-color: #ccc; border-radius: 20px; transition: background-color 0.2s; }
  .theme-switcher .slider::before { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background-color: white; border-radius: 50%; transition: transform 0.2s; }
@@ -119,12 +118,12 @@
 </style>
 
 <div id="wrap">
+  <p style="margin:0;padding:0.75rem 0;font-size:1em">Other projects: <a href="https://alver.cc/memory-ball-video/" style="color:var(--link-color)">Memory Ball Video Maker</a> | <a href="https://alver.cc/hptcg-game/" style="color:var(--link-color)">Harry Potter TCG</a></p>
+  <hr style="border:none;border-top:1px solid var(--border-color);margin:0 0 1rem">
   <h2>
     <div class="header-controls">
-      <span>MWI Market Viewer</span>
-      <input type="file" id="dataFile" accept=".json.gz" style="display: none;">
-      <button id="loadDataButton">Load Local Data</button>
-      <span id="lastDataInfo" style="margin-left:1em;font-size:0.95em;color:var(--text-color)"></span>
+      <span>MilkyWayIdle Market Viewer</span>
+<span id="lastDataInfo" style="margin-left:1em;font-size:0.95em;color:var(--text-color)"></span>
     </div>
     <div class="theme-control">
       <span>Theme</span>
@@ -589,7 +588,11 @@ function updateLastDataInfo(rows) {
   const dt = new Date(latestTs * 1000);
   const dateStr = dt.toLocaleDateString();
   const timeStr = dt.toLocaleTimeString();
-  document.getElementById('lastDataInfo').textContent = `Last data: ${dateStr} - ${timeStr}`;
+  const ageHours = (Date.now() - latestTs * 1000) / 3600000;
+  const color = ageHours < 12 ? '#4caf50' : ageHours < 24 ? '#f9a825' : '#e53935';
+  const el = document.getElementById('lastDataInfo');
+  el.textContent = `Last data: ${dateStr} - ${timeStr}`;
+  el.style.color = color;
 }
 
 function parseCompactData(buffer) {
@@ -616,38 +619,11 @@ async function loadInitialData() {
         const {newByItem, config, trends_3d, trends_7d, trends_30d} = parseCompactData(buffer);
         populateUI(newByItem, config, trends_3d, trends_7d, trends_30d);
     } catch (e) {
-        console.log("Could not load initial data. Waiting for local file.", e);
+        console.log("Could not load initial data.", e);
     }
 }
 
 async function main() {
-  // File loading logic
-  const loadDataButton = document.getElementById('loadDataButton');
-  const dataFileInput = document.getElementById('dataFile');
-
-  loadDataButton.addEventListener('click', () => dataFileInput.click());
-
-  dataFileInput.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const {newByItem, config, trends_3d, trends_7d, trends_30d} = parseCompactData(e.target.result);
-            populateUI(newByItem, config, trends_3d, trends_7d, trends_30d);
-        } catch(err) {
-            console.error("Error processing file", err);
-            alert("Error processing file: " + err);
-        }
-    };
-    reader.onerror = (e) => {
-        console.error("File could not be read!", e);
-        alert("Error reading file.");
-    };
-    reader.readAsArrayBuffer(file);
-  });
-
   // Theme switcher logic
   const themeToggle = document.getElementById('themeToggle');
   const body = document.body;
