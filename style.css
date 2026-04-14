@@ -236,11 +236,11 @@ header {
 }
 
 .panel-label {
-  font-size: 0.62rem;
-  letter-spacing: 0.22em;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
   color: var(--accent);
-  font-weight: 700;
-  padding-bottom: 0.45rem;
+  font-weight: 400;
+  padding: 0.4rem 0 0.6rem;
   border-bottom: 1px solid var(--border);
   text-transform: uppercase;
 }
