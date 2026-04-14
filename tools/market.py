@@ -221,14 +221,14 @@ def prepare_new_data():
                     last_vals[key] = (a, b, latest_ts)
 
     # Trend analysis (last 3 days, 7 days, and 30 days)
-    trends_3d = analyze_trends("downloads", items, days=3)
-    trends_7d = analyze_trends("downloads", items, days=7)
-    trends_30d = analyze_trends("downloads", items, days=30)
+    trends_3d = analyze_trends("downloads", items, days=3, min_abs_change=5)
+    trends_7d = analyze_trends("downloads", items, days=7, min_abs_change=15)
+    trends_30d = analyze_trends("downloads", items, days=30, min_abs_change=50)
 
-    # Keep only the top 15 items with highest percentage change for all trends
-    trends_3d = trends_3d[:15]
-    trends_7d = trends_7d[:15]
-    trends_30d = trends_30d[:15]
+    # Keep top 25 so frontend can show top 10 gainers + top 10 losers
+    trends_3d = trends_3d[:25]
+    trends_7d = trends_7d[:25]
+    trends_30d = trends_30d[:25]
 
     out = {"items": items, "rows": rows, "config": config_data, "trends_3d": trends_3d, "trends_7d": trends_7d, "trends_30d": trends_30d}
     with gzip.open("../market.compact.json.gz", "wt") as f:
