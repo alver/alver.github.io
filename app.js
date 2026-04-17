@@ -446,7 +446,10 @@ function updateLastDataInfo(rows) {
   }
   const latestTs = Math.max(...rows.map(r => r[0]));
   const dt = new Date(latestTs * 1000);
-  const dateStr = dt.toLocaleDateString();
+  const dd = String(dt.getDate()).padStart(2, '0');
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const yyyy = dt.getFullYear();
+  const dateStr = `${dd}.${mm}.${yyyy}`;
   const timeStr = dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
   const ageHours = (Date.now() - latestTs * 1000) / 3600000;
   const statusColor = ageHours < 12 ? 'var(--pos-color)' : ageHours < 24 ? 'var(--bid-color)' : 'var(--neg-color)';
