@@ -1,3 +1,4 @@
+import gzip
 import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -5,7 +6,7 @@ from pathlib import Path
 # Paths
 CONFIG_PATH = Path('config.json')
 SVG_PATH = Path('../svg/items_sprite.d4d08849.svg')
-OUTPUT_PATH = Path('../items_sprite_filtered.svg')
+OUTPUT_PATH = Path('../public/items_sprite_filtered.svg')
 
 # Load allowed item names from config.json
 def get_allowed_icons(config_path):
@@ -36,3 +37,10 @@ def filter_svg(svg_path, allowed_ids, output_path):
 if __name__ == '__main__':
     allowed_ids = get_allowed_icons(CONFIG_PATH)
     filter_svg(SVG_PATH, allowed_ids, OUTPUT_PATH)
+
+    # Gzip the result (the frontend fetches the .svg.gz) and drop the intermediate .svg
+    gz_path = OUTPUT_PATH.with_suffix('.svg.gz')
+    with open(OUTPUT_PATH, 'rb') as src, gzip.open(gz_path, 'wb', compresslevel=9) as dst:
+        dst.write(src.read())
+    OUTPUT_PATH.unlink()
+    print(f"wrote {gz_path} ({gz_path.stat().st_size/1024:.1f} KB)")

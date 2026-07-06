@@ -1,0 +1,72 @@
+name: Deploy to GitHub Pages
+
+# Runs on every push to main — including the hourly "Market price updates"
+# data commits from tools/market.py — plus manual runs from the Actions tab.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Hourly data pushes can stack up; queue deploys, never cancel a running one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      # base is "/" (user site with custom domain) — no BASE_PATH env needed.
+      - run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy1.outputs.page_url || steps.deploy2.outputs.page_url || steps.deploy3.outputs.page_url }}
+    steps:
+      # GitHub's Pages backend intermittently rejects deployments with
+      # "Deployment failed, try again later" — retry up to 3 times with backoff.
+      - id: deploy1
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - if: steps.deploy1.outcome == 'failure'
+        run: sleep 30
+
+      - id: deploy2
+        if: steps.deploy1.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure'
+        run: sleep 60
+
+      # Final attempt without continue-on-error: three failures fail the job
+      # (the next hourly data push retries the whole deploy anyway).
+      - id: deploy3
+        if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure'
+        uses: actions/deploy-pages@v4

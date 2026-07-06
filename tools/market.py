@@ -231,10 +231,10 @@ def prepare_new_data():
     trends_30d = trends_30d[:25]
 
     out = {"items": items, "rows": rows, "config": config_data, "trends_3d": trends_3d, "trends_7d": trends_7d, "trends_30d": trends_30d}
-    with gzip.open("../market.compact.json.gz", "wt") as f:
+    with gzip.open("../public/market.compact.json.gz", "wt") as f:
         json.dump(out, f, separators=(",", ":"))
 
-    print(f"items={len(items)}, rows={len(rows)} → {os.path.getsize('../market.compact.json.gz')/1024:.1f} KB, trends_3d={len(trends_3d)}, trends_7d={len(trends_7d)}, trends_30d={len(trends_30d)}")
+    print(f"items={len(items)}, rows={len(rows)} → {os.path.getsize('../public/market.compact.json.gz')/1024:.1f} KB, trends_3d={len(trends_3d)}, trends_7d={len(trends_7d)}, trends_30d={len(trends_30d)}")
 
 
 def upload_to_github():
@@ -242,12 +242,12 @@ def upload_to_github():
     try:
         # Stage the file
         result_add = subprocess.run([
-            r"C:\Program Files\Git\bin\git.exe", "add", "market.compact.json.gz"
+            r"C:\Program Files\Git\bin\git.exe", "add", "public/market.compact.json.gz"
         ], cwd=web_dir, capture_output=True, text=True)
         print("[git add]", result_add.stdout or result_add.stderr)
 
         result_add = subprocess.run([
-            r"C:\Program Files\Git\bin\git.exe", "commit", "-m", '"Market price updates"'
+            r"C:\Program Files\Git\bin\git.exe", "commit", "-m", "Market price updates"
         ], cwd=web_dir, capture_output=True, text=True)
         print("[git commit]", result_add.stdout or result_add.stderr)
 

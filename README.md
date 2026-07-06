@@ -10,9 +10,9 @@ Project running on Windows, but must be ok to use on any other OSs, just fix the
 
 This is a visual website combined with a set of Python scripts designed to automatically update market data. Since the website is hosted on GitHub Pages (free tier with traffic limitations), the system is specifically optimized to minimize bandwidth usage by tracking only the items you actually need.
 
-**Live Site:** The repository is automatically deployed via GitHub Pages, with `index.html` serving as the main entry point.
+**Live Site:** https://alver.cc — built with Vite and deployed to GitHub Pages by the GitHub Actions workflow in `.github/workflows/deploy.yml` on every push to `main`.
 
-The "dynamic" part implemented in two archive - the icons `items_sprite_filtered.svg.gz` and marketing data `market.compact.json.gz`. Webpage downloading this two files and use then to show all the information. Below you can find instructions how to create this two files.
+The "dynamic" part implemented in two archives in `public/` - the icons `items_sprite_filtered.svg.gz` and market data `market.compact.json.gz`. The webpage downloads these two files and uses them to show all the information. Below you can find instructions how to create these two files.
 
 ## Key Features
 
@@ -50,7 +50,7 @@ Don't touch the `ItemTokenPrices` section in the end of `config.json` - this is 
 
 ### 2. Prepare Icons file
 
-After updating your item configuration, create an "filtered" SVG sprite file, `items_sprite_filtered.svg.gz`. First, filter the items from full SVG file to your own:
+After updating your item configuration, regenerate the filtered SVG sprite (run from `tools/`):
 
 ```bash
 python filter_svg_icons.py
@@ -59,24 +59,11 @@ python filter_svg_icons.py
 This script:
 - Reads your `config.json` item list
 - Filters the original SVG spritesheet to include only needed icons
-- Outputs `../items_sprite_filtered.svg`
-
-Then (to save bandwidth), manually compress the filtered SVG:
-
-**Windows:**
-```bash
-# Using 7-Zip or similar
-7z a -tgzip items_sprite_filtered.svg.gz items_sprite_filtered.svg
-```
-
-**Linux/Mac:**
-```bash
-gzip -c items_sprite_filtered.svg > items_sprite_filtered.svg.gz
-```
+- Writes the gzipped result straight to `public/items_sprite_filtered.svg.gz` (no manual compression step needed)
 
 ### 3. Set Up Automated Market Data Collection
 
-The `market.py` script handles automatic market data updates and generate the `market.compact.json.gz` file with latest information, with automatically update it in the github.
+The `market.py` script handles automatic market data updates and generates the `public/market.compact.json.gz` file with latest information, and automatically pushes it to GitHub (which triggers a site rebuild and deploy).
 
 **What it does in more details:**
 - Fetches the latest `marketplace.json` from the game servers
@@ -84,7 +71,7 @@ The `market.py` script handles automatic market data updates and generate the `m
 - Filters data to include only items from your `config.json`
 - Generates a compact JSON file containing market data for the last 30 days (configurable)
 - Performs trend analysis for 3, 7, and 30-day periods (very experimental, very vibecoded)
-- Compresses the data using gzip (`market.compact.json.gz`)
+- Compresses the data using gzip (`public/market.compact.json.gz`)
 - Automatically commits and pushes updates to GitHub
 
 **Manual execution:**
@@ -98,19 +85,37 @@ Add the script to your system's task scheduler to run hourly.
 
 ## Local Development
 
-Since the website loads data dynamically, you cannot simply open `index.html` in your browser. Use a local web server, I suggesting to use solution integrated into the Python:
-
 ```bash
-python -m http.server 8080
-# Visit http://localhost:8080
+npm install
+npm run dev        # dev server at http://localhost:5173
+npm run typecheck  # type-check without emitting
+npm run build      # production build into dist/
+npm run preview    # serve the production build locally
 ```
+
+The frontend is a Vite + Preact + TypeScript app in `src/`:
+
+- `src/main.tsx` — entry point (Chart.js defaults, theme bootstrap, data loading kick-off)
+- `src/app.tsx` — page layout
+- `src/state/store.ts` — application state as `@preact/signals` signals/computeds/actions
+- `src/data/` — types, gzip data loading (`load.ts`), and the side-panel project list (`projects.ts`)
+- `src/ui/` — Preact components (chart, item browser, trend tables, header, sliding side panel)
+- `src/styles.css` — single global stylesheet (CRT theme, dark/light via CSS custom properties)
+
+Static files in `public/` (data archives, favicon, CNAME) are served at the site root.
+
+## Deployment
+
+Pushing to `main` triggers `.github/workflows/deploy.yml`: typecheck → Vite build → upload to GitHub Pages via `actions/deploy-pages`. The deploy step retries up to 3 times because the GitHub Pages backend occasionally fails transiently ("Deployment failed, try again later").
+
+One-time repo setting: Settings → Pages → Source must be **"GitHub Actions"**.
 
 ## Technology Stack
 
-- **Frontend**: Vanilla JavaScript, Chart.js for visualizations
+- **Frontend**: TypeScript, Preact + @preact/signals, Chart.js, Vite
 - **Data Processing**: Python 3 with standard libraries
-- **Compression**: Gzip for data and assets
-- **Hosting**: GitHub Pages (static hosting)
+- **Compression**: Gzip for data and assets (Pako for client-side decompression)
+- **Hosting**: GitHub Pages (static hosting) via GitHub Actions
 - **Version Control**: Git for automated deployments
 
 ## Contributing
