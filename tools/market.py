@@ -234,7 +234,9 @@ def prepare_new_data():
     with gzip.open("../public/market.compact.json.gz", "wt") as f:
         json.dump(out, f, separators=(",", ":"))
 
-    print(f"items={len(items)}, rows={len(rows)} → {os.path.getsize('../public/market.compact.json.gz')/1024:.1f} KB, trends_3d={len(trends_3d)}, trends_7d={len(trends_7d)}, trends_30d={len(trends_30d)}")
+    # ASCII only: on a cp1252 Windows console a non-ASCII print raises
+    # UnicodeEncodeError and aborts the run before the git upload.
+    print(f"items={len(items)}, rows={len(rows)} -> {os.path.getsize('../public/market.compact.json.gz')/1024:.1f} KB, trends_3d={len(trends_3d)}, trends_7d={len(trends_7d)}, trends_30d={len(trends_30d)}")
 
 
 def upload_to_github():
