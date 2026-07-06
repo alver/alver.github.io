@@ -31,6 +31,12 @@ export const PROJECTS: Project[] = [
     url: "https://alver.cc/altered/",
   },
   {
+    title: "Legendary Encounters: The Matrix",
+    desc: "Solo play of the Matrix deck-building board game",
+    icon: "◎",
+    url: "https://github.com/alver/legendary_encounters_the_matrix",
+  },
+  {
     title: "TRMNL GitHub Firmware",
     desc: "GitHub dashboard firmware for TRMNL e-ink displays",
     icon: "⌘",
