@@ -25,6 +25,9 @@
   --pos-color:     #00dd77;
   --neg-color:     #ff4466;
   --chart-bg:      rgba(0,0,0,0);
+  --promo:         #ff5ce1;
+  --promo-dim:     rgba(255,92,225,0.12);
+  --promo-glow:    rgba(255,92,225,0.45);
 }
 
 body[data-theme="light"] {
@@ -50,6 +53,9 @@ body[data-theme="light"] {
   --pos-color:     #007744;
   --neg-color:     #cc2244;
   --chart-bg:      rgba(0,0,0,0);
+  --promo:         #c026d3;
+  --promo-dim:     rgba(192,38,211,0.10);
+  --promo-glow:    rgba(192,38,211,0.35);
 }
 
 /* ─── BASE ───────────────────────────────────────────────────── */
@@ -101,11 +107,12 @@ body[data-theme="light"] #scanlines { opacity: 0; }
 }
 
 /* ─── SIDE PANEL (MORE PROJECTS BY ALVER) ───────────────────── */
+/* Full-height hover strip: entering anywhere along the left edge opens it */
 .side-panel {
   position: fixed;
   left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  height: 100vh;
   z-index: 500;
   display: flex;
   align-items: center;
@@ -114,35 +121,48 @@ body[data-theme="light"] #scanlines { opacity: 0; }
 .side-panel-tab {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  padding: 0.9rem 0.35rem;
-  border: 1px solid var(--border);
+  padding: 1rem 0.4rem;
+  border: 1px solid var(--promo);
   border-left: none;
   border-radius: 0 3px 3px 0;
-  background: var(--panel);
-  color: var(--text-dim);
+  background: var(--promo-dim);
+  color: var(--promo);
   cursor: pointer;
   font-family: 'Roboto', sans-serif;
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
+  text-shadow: 0 0 6px var(--promo-glow);
+  box-shadow: 0 0 10px var(--promo-glow);
+  animation: promoPulse 2.4s ease-in-out infinite;
   transition: all 0.15s;
+}
+@keyframes promoPulse {
+  0%, 100% { box-shadow: 0 0 6px var(--promo-glow); }
+  50%      { box-shadow: 0 0 16px var(--promo-glow), 0 0 28px var(--promo-dim); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .side-panel-tab { animation: none; }
 }
 .side-panel-tab:hover,
 .side-panel.open .side-panel-tab {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-dim);
-  box-shadow: 0 0 8px var(--accent-glow);
+  background: var(--promo);
+  color: var(--bg);
+  text-shadow: none;
+  animation: none;
+  box-shadow: 0 0 18px var(--promo-glow);
 }
 .side-panel-tab:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1px solid var(--promo);
   outline-offset: 2px;
 }
 
 .side-panel-drawer {
   width: 280px;
   max-width: 80vw;
+  max-height: 90vh;
+  overflow-y: auto;
   margin-left: -280px;
   visibility: hidden;
   display: flex;
@@ -150,7 +170,7 @@ body[data-theme="light"] #scanlines { opacity: 0; }
   gap: 0.5rem;
   padding: 1rem 0.9rem;
   background: var(--panel);
-  border: 1px solid var(--border);
+  border: 1px solid var(--promo);
   border-left: none;
   border-radius: 0 3px 3px 0;
   transition: margin-left 0.25s ease, visibility 0s linear 0.25s;
@@ -158,12 +178,12 @@ body[data-theme="light"] #scanlines { opacity: 0; }
 .side-panel.open .side-panel-drawer {
   margin-left: 0;
   visibility: visible;
-  box-shadow: 0 0 24px var(--accent-glow);
+  box-shadow: 0 0 24px var(--promo-glow);
   transition: margin-left 0.25s ease, visibility 0s;
 }
 
 .side-panel-heading {
-  color: var(--accent);
+  color: var(--promo);
   font-weight: 700;
   letter-spacing: 0.18em;
   font-size: 0.68rem;
@@ -184,8 +204,8 @@ body[data-theme="light"] #scanlines { opacity: 0; }
 }
 .project-card:hover,
 .project-card:focus-visible {
-  border-color: var(--accent);
-  background: var(--accent-dim);
+  border-color: var(--promo);
+  background: var(--promo-dim);
   outline: none;
 }
 
@@ -199,7 +219,7 @@ body[data-theme="light"] #scanlines { opacity: 0; }
   border: 1px solid var(--border);
   border-radius: 3px;
   background: var(--panel2);
-  color: var(--accent);
+  color: var(--promo);
   font-size: 1rem;
 }
 
