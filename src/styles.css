@@ -133,25 +133,12 @@ body[data-theme="light"] #scanlines { opacity: 0; }
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  text-shadow: 0 0 6px var(--promo-glow);
-  box-shadow: 0 0 10px var(--promo-glow);
-  animation: promoPulse 2.4s ease-in-out infinite;
   transition: all 0.15s;
-}
-@keyframes promoPulse {
-  0%, 100% { box-shadow: 0 0 6px var(--promo-glow); }
-  50%      { box-shadow: 0 0 16px var(--promo-glow), 0 0 28px var(--promo-dim); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .side-panel-tab { animation: none; }
 }
 .side-panel-tab:hover,
 .side-panel.open .side-panel-tab {
   background: var(--promo);
   color: var(--bg);
-  text-shadow: none;
-  animation: none;
-  box-shadow: 0 0 18px var(--promo-glow);
 }
 .side-panel-tab:focus-visible {
   outline: 1px solid var(--promo);
