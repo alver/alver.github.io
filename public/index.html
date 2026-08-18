@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alver — Projects</title>
+  <meta name="description" content="An index of small web projects by Alver: card game tools, board game helpers, video toys, and e-ink firmware.">
+  <link rel="icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script>
+    // Applied before first paint so the page never flashes the wrong theme.
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem("theme"); } catch (e) {}
+      var dark = saved ? saved === "dark"
+        : !window.matchMedia("(prefers-color-scheme: light)").matches;
+      document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    })();
+  </script>
+</head>
+<body>
+  <div id="scanlines" aria-hidden="true"></div>
+
+  <main class="shell">
+    <header class="masthead">
+      <div class="mast-id">
+        <h1 class="wordmark">ALVER<span class="caret" aria-hidden="true"></span></h1>
+        <p class="tagline">Small web things, built for fun. Mostly games, mostly weekends.</p>
+      </div>
+      <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch colour theme">
+        <span class="theme-toggle-icon" aria-hidden="true"></span>
+      </button>
+    </header>
+
+    <section class="board" aria-labelledby="board-label">
+      <div class="board-head">
+        <h2 id="board-label" class="board-label">Index</h2>
+        <span class="board-status">Status</span>
+      </div>
+
+      <ul class="rows">
+        <li class="row-item">
+          <a class="row" href="https://alver.cc/memory-ball-video/">
+            <span class="glyph" aria-hidden="true">◉</span>
+            <span class="row-main">
+              <span class="row-title">Memory Ball Video Maker</span>
+              <span class="row-desc">Turn your photos into spinning memory-ball videos.</span>
+            </span>
+            <span class="status is-live"><span class="dot" aria-hidden="true"></span>Live</span>
+          </a>
+        </li>
+
+        <li class="row-item">
+          <a class="row" href="https://alver.cc/hptcg-game/">
+            <span class="glyph" aria-hidden="true">⚡</span>
+            <span class="row-main">
+              <span class="row-title">Harry Potter TCG</span>
+              <span class="row-desc">Play the classic trading card game in your browser.</span>
+            </span>
+            <span class="status is-live"><span class="dot" aria-hidden="true"></span>Live</span>
+          </a>
+        </li>
+
+        <li class="row-item">
+          <a class="row" href="https://alver.cc/lorcana/">
+            <span class="glyph" aria-hidden="true">✦</span>
+            <span class="row-main">
+              <span class="row-title">Lorcana TCG</span>
+              <span class="row-desc">Deck tools for Disney's Lorcana.</span>
+            </span>
+            <span class="status is-live"><span class="dot" aria-hidden="true"></span>Live</span>
+          </a>
+        </li>
+
+        <li class="row-item">
+          <a class="row" href="https://alver.cc/altered/">
+            <span class="glyph" aria-hidden="true">△</span>
+            <span class="row-main">
+              <span class="row-title">Altered TCG</span>
+              <span class="row-desc">Companion app for the Altered card game.</span>
+            </span>
+            <span class="status is-live"><span class="dot" aria-hidden="true"></span>Live</span>
+          </a>
+        </li>
+
+        <li class="row-item">
+          <a class="row" href="https://alver.cc/legendary_encounters_the_matrix/">
+            <span class="glyph" aria-hidden="true">◎</span>
+            <span class="row-main">
+              <span class="row-title">Legendary Encounters: The Matrix</span>
+              <span class="row-desc">Solo play for the Matrix deck-building board game.</span>
+            </span>
+            <span class="status is-live"><span class="dot" aria-hidden="true"></span>Live</span>
+          </a>
+        </li>
+
+        <li class="row-item">
+          <a class="row" href="https://github.com/alver/trmnl-github">
+            <span class="glyph" aria-hidden="true">⌘</span>
+            <span class="row-main">
+              <span class="row-title">TRMNL GitHub Firmware</span>
+              <span class="row-desc">GitHub dashboard firmware for TRMNL e-ink displays.</span>
+            </span>
+            <span class="status is-live"><span class="dot" aria-hidden="true"></span>Live</span>
+          </a>
+        </li>
+
+        <li class="row-item">
+          <a class="row is-archived" href="https://github.com/alver/milkywayidle_market">
+            <span class="glyph" aria-hidden="true">▤</span>
+            <span class="row-main">
+              <span class="row-title">Milky Way Idle Market</span>
+              <span class="row-desc">Price tracker for the Milky Way Idle marketplace. Source only — no longer updated.</span>
+            </span>
+            <span class="status is-archived"><span class="dot" aria-hidden="true"></span>Archived</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <footer class="footer">
+      <a class="footer-link" href="https://github.com/alver">github.com/alver</a>
+      <span class="footer-note">Everything here is vibe-coded and offered as-is.</span>
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById("theme-toggle");
+      function sync() {
+        var dark = root.getAttribute("data-theme") === "dark";
+        btn.setAttribute("aria-pressed", String(dark));
+        btn.title = dark ? "Switch to light theme" : "Switch to dark theme";
+      }
+      btn.addEventListener("click", function () {
+        var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        root.setAttribute("data-theme", next);
+        try { localStorage.setItem("theme", next); } catch (e) {}
+        sync();
+      });
+      sync();
+    })();
+  </script>
+</body>
+</html>

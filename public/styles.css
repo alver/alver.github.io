@@ -1,0 +1,319 @@
+/* ─── RESET ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ─── THEME VARIABLES ───────────────────────────────────────── */
+/* Carried over from the old market site so alver.cc keeps its identity. */
+:root, :root[data-theme="dark"] {
+  --bg:            #060d1a;
+  --panel:         #0b1727;
+  --panel2:        #0e1c30;
+  --border:        #1c3452;
+  --text-color:    #8db8d8;
+  --text-bright:   #daeeff;
+  --text-dim:      #3a587a;
+  --accent:        #00e5ff;
+  --accent-dim:    rgba(0,229,255,0.08);
+  --accent-glow:   rgba(0,229,255,0.35);
+  --live:          #00dd77;
+  --live-glow:     rgba(0,221,119,0.5);
+  --scanline:      rgba(0,0,0,0.035);
+}
+
+:root[data-theme="light"] {
+  --bg:            #eef4fc;
+  --panel:         #ffffff;
+  --panel2:        #f0f5ff;
+  --border:        #c0d2ea;
+  --text-color:    #2c3e5a;
+  --text-bright:   #0a1530;
+  --text-dim:      #8090b0;
+  --accent:        #0055cc;
+  --accent-dim:    rgba(0,85,204,0.07);
+  --accent-glow:   rgba(0,85,204,0.3);
+  --live:          #007744;
+  --live-glow:     rgba(0,119,68,0.4);
+  --scanline:      rgba(0,0,0,0);
+}
+
+/* ─── BASE ───────────────────────────────────────────────────── */
+/* No html font-size override — rem stays tied to the reader's own setting. */
+
+body {
+  font-family: 'Roboto', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text-color);
+  min-height: 100vh;
+  line-height: 1.5;
+  transition: background 0.25s, color 0.25s;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* CRT scanline overlay — invisible in light theme via --scanline */
+#scanlines {
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    var(--scanline) 3px,
+    var(--scanline) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.shell {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: clamp(2.5rem, 9vw, 5.5rem) clamp(1.1rem, 5vw, 2rem) 3rem;
+}
+
+/* ─── MASTHEAD ───────────────────────────────────────────────── */
+.masthead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: clamp(2.5rem, 7vw, 4rem);
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: clamp(2rem, 8vw, 3.1rem);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  color: var(--text-bright);
+  text-shadow: 0 0 18px var(--accent-glow);
+}
+/* The phosphor glow only makes sense against a dark screen */
+:root[data-theme="light"] .wordmark { text-shadow: none; }
+
+/* Terminal caret — the one nod to the CRT past, kept small */
+.caret {
+  display: inline-block;
+  width: 0.42em;
+  height: 0.95em;
+  margin-left: 0.1em;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+  animation: blink 1.15s steps(1) infinite;
+}
+
+@keyframes blink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
+
+.tagline {
+  margin-top: 0.9rem;
+  max-width: 34ch;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+}
+
+.theme-toggle {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--panel);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.theme-toggle:hover { border-color: var(--accent); background: var(--accent-dim); }
+.theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Filled disc in dark theme, ring in light — reads as sun/moon without an icon font */
+.theme-toggle-icon {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--accent);
+  transition: background 0.15s;
+}
+:root[data-theme="light"] .theme-toggle-icon { background: transparent; }
+
+/* ─── BOARD ──────────────────────────────────────────────────── */
+.board-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.board-label,
+.board-status {
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.rows { list-style: none; }
+
+.row-item {
+  border-bottom: 1px solid var(--border);
+  opacity: 0;
+  animation: fade-up 0.4s ease forwards;
+}
+/* Stagger: the index populates like a listing coming up on screen */
+.row-item:nth-child(1) { animation-delay: 0.05s; }
+.row-item:nth-child(2) { animation-delay: 0.11s; }
+.row-item:nth-child(3) { animation-delay: 0.17s; }
+.row-item:nth-child(4) { animation-delay: 0.23s; }
+.row-item:nth-child(5) { animation-delay: 0.29s; }
+.row-item:nth-child(6) { animation-delay: 0.35s; }
+.row-item:nth-child(7) { animation-delay: 0.41s; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.05rem 0.75rem;
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: background 0.15s, border-left-color 0.15s, padding-left 0.15s;
+}
+.row:hover,
+.row:focus-visible {
+  background: var(--accent-dim);
+  border-left-color: var(--accent);
+  padding-left: 1rem;
+  outline: none;
+}
+.row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--panel2);
+  color: var(--accent);
+  font-size: 1.05rem;
+  transition: border-color 0.15s, color 0.15s;
+}
+.row:hover .glyph { border-color: var(--accent); }
+
+.row-main { min-width: 0; }
+
+.row-title {
+  display: block;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-bright);
+}
+
+.row-desc {
+  display: block;
+  margin-top: 0.28rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+/* ─── STATUS ─────────────────────────────────────────────────── */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status.is-live { color: var(--live); }
+.status.is-live .dot {
+  background: var(--live);
+  box-shadow: 0 0 0 0 var(--live-glow);
+  animation: pulse 2.6s ease-out infinite;
+}
+
+@keyframes pulse {
+  0%       { box-shadow: 0 0 0 0 var(--live-glow); }
+  60%, 100% { box-shadow: 0 0 0 6px rgba(0,0,0,0); }
+}
+
+/* Archived: hollow dot, everything a step quieter */
+.status.is-archived { color: var(--text-dim); }
+.status.is-archived .dot {
+  border: 1px solid var(--text-dim);
+}
+
+.row.is-archived .row-title { color: var(--text-color); }
+.row.is-archived .glyph { color: var(--text-dim); }
+
+/* ─── FOOTER ─────────────────────────────────────────────────── */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 2.5rem;
+  font-size: 0.75rem;
+}
+
+.footer-link {
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+.footer-link:hover { border-bottom-color: var(--accent); }
+.footer-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.footer-note { color: var(--text-dim); }
+
+/* ─── RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .row {
+    grid-template-columns: auto 1fr;
+    row-gap: 0.55rem;
+    padding: 0.95rem 0.6rem;
+  }
+  /* Status drops under the text, aligned past the glyph */
+  .status { grid-column: 2; }
+  .board-status { display: none; }
+  .tagline { font-size: 0.86rem; }
+}
+
+/* ─── MOTION ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .row-item { opacity: 1; }
+  .caret { opacity: 1; }
+}
