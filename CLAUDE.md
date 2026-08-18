@@ -30,13 +30,13 @@ Local preview: `python -m http.server -d public 8000`.
   to `localStorage`. All colors are CSS custom properties defined on
   `:root[data-theme="dark"]` / `:root[data-theme="light"]` — never hardcode a
   color anywhere else.
-- **Projects** are `<li class="row-item">` rows in `index.html`. Each carries a
-  status of `is-live` (pulsing dot, links to the live page) or `is-archived`
-  (hollow dot, dimmed, links to the source repo).
+- **Projects** are `<li class="row-item">` rows in `index.html`. Every row is
+  styled identically — a project is a project, whether it links to a live page
+  or just to its source repo.
 - The staggered row entrance uses explicit `.row-item:nth-child(n)` delays in
   `styles.css` — adding rows means adding delays.
-- The CRT look (scanline overlay, cyan accent, blinking caret, mono labels) is
-  inherited from the market tracker that used to live here. Keep it.
+- The CRT look (scanline overlay, cyan accent, mono labels) is inherited from
+  the market tracker that used to live here. Keep it.
 
 ## Deployment
 

@@ -23,10 +23,8 @@ python -m http.server -d public 8000
 ## Adding a project
 
 Copy one `<li class="row-item">` block in `public/index.html`, change the link,
-glyph, title and description. Set the status to `is-live` or `is-archived` —
-archived entries point at their source repo instead of a live page. If you add a
-seventh-plus row, add a matching `.row-item:nth-child(n)` animation delay in
-`public/styles.css`.
+glyph, title and description. If you add an eighth row or beyond, add a matching
+`.row-item:nth-child(n)` animation delay in `public/styles.css`.
 
 ## Deployment
 
